@@ -4,7 +4,7 @@ import {
 } from '5-entities/shared/hidden-store'
 import { createSelector } from '@reduxjs/toolkit'
 import { keys } from '6-shared/helpers/keys'
-import { AppThunk, TSelector } from 'store'
+import { AppDispatch, AppThunk, RootState, TSelector } from 'store'
 
 export type TUserSettings = {
   /** Shows if user already closed notification about migration from 0 to 1 version */
@@ -12,7 +12,14 @@ export type TUserSettings = {
 
   /** This flag determines which budgets to use */
   preferZmBudgets: boolean
+
+  /**
+   * This flag determines if account categorization by savings and investments is used.
+   * When enabled, accounts can be categorized as Balance, Safety, RealAsset, or Investment.
+   */
+  useAccountCategorization: boolean
 }
+
 export type TUserSettingsPatch = Partial<TUserSettings>
 export type TStoredUserSettings = Partial<TUserSettings>
 
@@ -26,12 +33,13 @@ export const getUserSettings: TSelector<TUserSettings> = createSelector(
   raw => ({
     sawMigrationAlert: raw.sawMigrationAlert ?? false,
     preferZmBudgets: raw.preferZmBudgets ?? false,
+    useAccountCategorization: raw.useAccountCategorization ?? false,
   })
 )
 
 export const patchUserSettings =
   (update: TUserSettingsPatch): AppThunk =>
-  (dispatch, getState) => {
+  (dispatch: AppDispatch, getState: () => RootState) => {
     const currentData = userSettingsStore.getData(getState())
     const newData = { ...currentData, ...update }
 

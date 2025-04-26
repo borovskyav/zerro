@@ -9,9 +9,11 @@ import {
 } from './selectors'
 import { makeAccount } from './shared/makeAccount'
 import { patchAccount, setInBudget } from './thunks'
+import { getAccountMeta, patchAccountMeta } from './shared/settings'
 
 export type { TAccountDraft } from './thunks'
 export type { TAccountPopulated } from './shared/populate'
+export type { TAccountMeta, TAccountMetaPatch } from './shared/settings'
 
 export const accountModel = {
   getAccounts,
@@ -20,6 +22,7 @@ export const accountModel = {
   getAccountList,
   getInBudgetAccounts,
   getSavingAccounts,
+  getAccountMeta,
   // Hooks
   useAccounts: () => useAppSelector(getAccounts),
   useDebtAccountId: () => useAppSelector(getDebtAccountId),
@@ -32,4 +35,5 @@ export const accountModel = {
   // Thunks
   patchAccount,
   setInBudget,
+  patchAccountMeta,
 }

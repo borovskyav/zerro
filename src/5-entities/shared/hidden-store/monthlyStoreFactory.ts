@@ -4,7 +4,7 @@ import { isISOMonth } from '6-shared/helpers/date'
 import { keys } from '6-shared/helpers/keys'
 import { TReminder, TISOMonth, ByMonth } from '6-shared/types'
 
-import { AppThunk, TSelector } from 'store'
+import { AppDispatch, AppThunk, RootState, TSelector } from 'store'
 import { deleteReminder, getReminders, setReminder } from '5-entities/reminder'
 import { prepareDataAccount } from './dataAccount'
 import { parseComment } from './helpers'
@@ -49,14 +49,14 @@ export function makeMonthlyHiddenStore<TPayload>(
 
   const resetMonth =
     (month: TISOMonth): AppThunk =>
-    (dispatch, getState) => {
+    (dispatch: AppDispatch, getState: () => RootState) => {
       const id = getDataReminders(getState())[month]?.id
       if (id) dispatch(deleteReminder(id))
     }
 
   const setData =
     (payload: TPayload, month: TISOMonth): AppThunk<TReminder | void> =>
-    (dispatch, getState) => {
+    (dispatch: AppDispatch, getState: () => RootState) => {
       if (!isISOMonth(month)) throw new Error('Invalid month')
 
       // If payload is empty just delete the node

@@ -6,5 +6,6 @@ export enum HiddenDataType {
   LinkedDebtors = 'linkedDebtors',
   EnvelopeMeta = 'EnvelopeMeta',
   UserSettings = 'UserSettings',
+  AccountMeta = 'AccountMeta',
   TagOrder = 'tagOrder',
 }

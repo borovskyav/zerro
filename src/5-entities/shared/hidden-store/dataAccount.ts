@@ -1,5 +1,5 @@
 import { createSelector } from '@reduxjs/toolkit'
-import { AppThunk } from 'store'
+import { AppDispatch, AppThunk, RootState } from 'store'
 import { accountModel } from '5-entities/account'
 import { applyClientPatch } from 'store/data'
 import { userModel } from '5-entities/user'
@@ -21,7 +21,7 @@ export const getDataAccountId = createSelector(
 )
 
 export function prepareDataAccount(): AppThunk<TAccountId> {
-  return (dispatch, getState) => {
+  return (dispatch: AppDispatch, getState: () => RootState) => {
     let state = getState()
     const user = userModel.getRootUser(state)
     if (!user) {

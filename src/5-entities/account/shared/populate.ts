@@ -1,21 +1,35 @@
 import { TAccount, TFxCode, AccountType } from '6-shared/types'
 import { TInstCodeMap } from '5-entities/currency/instrument'
+import { AccountCategory, TAccountMeta } from "./settings";
 
 export type TAccountPopulated = TAccount & {
   startBalanceReal: number
   inBudget: boolean
   fxCode: TFxCode
+  category: AccountCategory
 }
 
 export function populate(
   raw: TAccount,
-  fxIdMap: TInstCodeMap
+  fxIdMap: TInstCodeMap,
+  accountMeta?: TAccountMeta
 ): TAccountPopulated {
+  const inBudget = isInBudget(raw)
+  let accountType: AccountCategory
+  if (accountMeta?.category !== undefined) {
+    accountType = accountMeta.category
+  } else if (inBudget) {
+    accountType = AccountCategory.Balance
+  } else {
+    accountType = AccountCategory.Safety
+  }
+
   return {
     ...raw,
     startBalanceReal: getStartBalance(raw),
-    inBudget: isInBudget(raw),
+    inBudget: inBudget,
     fxCode: fxIdMap[raw.instrument],
+    category: accountType,
   }
 }
 
