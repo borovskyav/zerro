@@ -141,11 +141,11 @@ export const en: typeof ru = {
       'The money in these accounts is counted in the budget',
     other: 'Other',
     otherDescription:
-      'These accounts are not counted in the budget, transfers to them are reflected as expenses. It is convenient to separate investment accounts, mortgages, loans, and long-term savings here.',
+      'These accounts are not counted in the budget, transfers to them are reflected as expenses. It is convenient to separate investment accounts, mortgages, loans, and long-term savings here',
     safety: 'Safety Reserves',
     safetyDescription: 'Accounts for emergency funds and short-term savings goals',
     realAssets: 'Real Assets',
-    realAssetsDescription: 'Real estate, vehicles, and other physical assets',
+    realAssetsDescription: 'Real estate, vehicles, and other physical assets. The value of these assets may change over time, so it\'s recommended to periodically reassess their worth',
     investments: 'Investments',
     investmentsDescription: 'Investment accounts, stocks, bonds, and other financial instruments',
     balanceDescription: 'Accounts for everyday expenses and income',
@@ -361,6 +361,10 @@ export const en: typeof ru = {
   accountContextMenu: {
     moveInBalance: 'Include in balance',
     moveFromBalance: 'Exclude from balance',
+    setBalanceCategory: 'Move to balance',
+    setSavingsCategory: 'Move to safety reserves',
+    setRealAssetCategory: 'Move to real assets',
+    setInvestmentCategory: 'Move to investments',
   },
 
   confirmDefaults: {

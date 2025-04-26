@@ -1,6 +1,6 @@
 import { TAccount, TFxCode, AccountType } from '6-shared/types'
 import { TInstCodeMap } from '5-entities/currency/instrument'
-import { AccountCategory, TAccountMeta } from "./settings";
+import { AccountCategory, isPinned, TAccountMeta } from "./settings";
 
 export type TAccountPopulated = TAccount & {
   startBalanceReal: number
@@ -42,6 +42,6 @@ function getStartBalance(acc: TAccount): number {
 
 function isInBudget(a: TAccount): boolean {
   if (a.type === AccountType.Debt) return false
-  if (a.title.endsWith('📍')) return true
+  if (isPinned(a)) return true
   return a.inBalance
 }

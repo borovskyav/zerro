@@ -1,4 +1,4 @@
-import { ById, OptionalExceptFor, TAccountId } from "6-shared/types";
+import { ById, OptionalExceptFor, TAccount, TAccountId } from "6-shared/types";
 import { HiddenDataType, makeSimpleHiddenStore } from "5-entities/shared/hidden-store";
 import { AppDispatch, AppThunk, RootState } from "store";
 
@@ -11,7 +11,7 @@ export enum AccountCategory {
   /** Safety accounts like emergency funds */
   Safety = 'safety',
   /** Physical assets like real estate or vehicles */
-  RealAsset = 'real_asset',
+  RealAsset = 'realAsset',
   /** Investment accounts like stocks, bonds, etc. */
   Investment = 'investment',
 }
@@ -46,3 +46,7 @@ export const patchAccountMeta =
 
       dispatch(accountMetaStore.setData(newData))
     }
+
+export function isPinned(a: TAccount): boolean {
+    return a.title.endsWith('📍')
+}
