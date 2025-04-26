@@ -1,6 +1,6 @@
-import React, { FC } from 'react'
+import React, { FC, ReactElement } from 'react'
 import { useTranslation } from 'react-i18next'
-import { Collapse, List, ListItemButton } from '@mui/material'
+import { Collapse, List, ListItemButton, SxProps, Theme } from '@mui/material'
 import { Tooltip } from '6-shared/ui/Tooltip'
 import { useToggle } from '6-shared/hooks/useToggle'
 import { TFxAmount } from '6-shared/types'
@@ -8,14 +8,14 @@ import { addFxAmount } from '6-shared/helpers/money'
 import { toISOMonth } from '6-shared/helpers/date'
 
 import { accountModel, TAccountPopulated } from '5-entities/account'
-import {
-  DisplayAmount,
-  displayCurrency,
-} from '5-entities/currency/displayCurrency'
+import { AccountCategory } from '5-entities/account/shared/settings'
+import { DisplayAmount, displayCurrency } from '5-entities/currency/displayCurrency'
 import { Account, Subheader } from './components'
+import { userSettingsModel } from '5-entities/userSettings'
 
 export default function AccountList({ className = '' }) {
   const { t } = useTranslation('accounts')
+  const { useAccountCategorization } = userSettingsModel.useUserSettings()
   const toDisplay = displayCurrency.useToDisplay(toISOMonth(new Date()))
   const inBudget = accountModel
     .useInBudgetAccounts()
@@ -32,63 +32,130 @@ export default function AccountList({ className = '' }) {
         toDisplay({ [a.fxCode]: a.balance })
     )
 
-  const inBudgetActive = inBudget.filter(a => !a.archive)
-  const inBudgetArchived = inBudget.filter(a => a.archive)
-
-  const savingsActive = savings.filter(a => !a.archive)
-  const savingsArchived = savings.filter(a => a.archive)
-
   return (
     <div className={className}>
-      <List dense>
-        <Subheader
-          name={
-            <Tooltip title={t('inBalanceDescription')}>
-              <span>{t('inBalance')}</span>
-            </Tooltip>
-          }
-          amount={getTotal(inBudget)}
-        />
-        {inBudgetActive.map(acc => (
-          <Account key={acc.id} account={acc} />
-        ))}
-        <ArchivedList accs={inBudgetArchived} />
-      </List>
+      <CategorySection
+        key={'inBalance'}
+        categoryName={t('inBalance')}
+        categoryDescription={t('inBalanceDescription')}
+        accounts={inBudget}
+      />
 
-      <List dense>
-        <Subheader
-          name={
-            <Tooltip title={t('otherDescription')}>
-              <span>{t('other')}</span>
-            </Tooltip>
-          }
-          amount={getTotal(savings)}
-        />
-        {savingsActive.map(acc => (
-          <Account key={acc.id} account={acc} />
-        ))}
-        <ArchivedList accs={savingsArchived} />
-      </List>
+      {!useAccountCategorization && <OutOfBudgetList accounts={savings} />}
+      {useAccountCategorization && <CategorizedAccountsList accounts={savings} />}
     </div>
   )
 }
 
-const ArchivedList: FC<{ accs: TAccountPopulated[] }> = props => {
+const CategorizedAccountsList: FC<{accounts?: TAccountPopulated[]}> = props => {
+  const { accounts = [] } = props;
   const { t } = useTranslation('accounts')
-  const { accs } = props
+
+  const categories = [
+    AccountCategory.Safety,
+    AccountCategory.RealAsset,
+    AccountCategory.Investment
+  ];
+
+  const categoryNames: Record<AccountCategory, string> = {
+    [AccountCategory.Balance]: t('inBalance'),
+    [AccountCategory.Safety]: t('safety'),
+    [AccountCategory.RealAsset]: t('realAssets'),
+    [AccountCategory.Investment]: t('investments'),
+  };
+
+  const categoryDescriptions: Record<AccountCategory, string> = {
+    [AccountCategory.Balance]: t('inBalanceDescription'),
+    [AccountCategory.Safety]: t('safetyDescription'),
+    [AccountCategory.RealAsset]: t('realAssetsDescription'),
+    [AccountCategory.Investment]: t('investmentsDescription'),
+  };
+
+  return (
+    <>
+      {categories.map(category => {
+        return <CategorySection
+          key={category}
+          categoryName={categoryNames[category]}
+          categoryDescription={categoryDescriptions[category]}
+          accounts={accounts.filter(a => a.category === category)}
+        />
+      })
+      }
+    </>
+  );
+}
+
+const OutOfBudgetList: FC<{ accounts: TAccountPopulated[] }> = props => {
+  const { accounts } = props;
+  const { t } = useTranslation('accounts')
+
+  return <CategorySection
+    key={'other'}
+    categoryName={t('other')}
+    categoryDescription={t('otherDescription')}
+    accounts={accounts}
+  />
+}
+
+interface CategorySectionProps {
+  categoryName: string;
+  categoryDescription: string;
+  accounts: TAccountPopulated[];
+}
+
+const CategorySection: FC<CategorySectionProps> = props => {
+  const { categoryName, categoryDescription, accounts } = props;
+  const [visible, toggleVisibility] = useToggle(true);
+  const activeAccounts = accounts.filter(a => !a.archive);
+  const archivedAccounts = accounts.filter(a => a.archive);
+
+  if (!accounts.length) return null;
+
+  return (
+    <List dense>
+      <ListItemButton
+        component="div"
+        onClick={toggleVisibility}
+        disableGutters
+        sx={{ p: 0, borderRadius: 1 }}
+      >
+        <Subheader
+          name={
+            <Tooltip title={categoryDescription}>
+              <span>{categoryName}</span>
+            </Tooltip>
+          }
+          amount={getTotal(accounts)}
+          sx={{width: '100%', cursor: 'pointer', '&:hover': { bgcolor: 'action.hover' }}}
+        />
+      </ListItemButton>
+      <Collapse in={visible} unmountOnExit>
+        {activeAccounts.map(acc => (
+          <Account key={acc.id} account={acc} />
+        ))}
+        <ArchivedList accounts={archivedAccounts} />
+      </Collapse>
+    </List>
+  );
+}
+
+const ArchivedList: FC<{ accounts: TAccountPopulated[] }> = props => {
+  const { t } = useTranslation('accounts')
+  const { accounts } = props
   const month = toISOMonth(new Date())
   const toDisplay = displayCurrency.useToDisplay(month)
   const [visible, toggleVisibility] = useToggle()
-  if (!accs.length) return null
+  if (!accounts.length) return null
 
-  const sum = getTotal(accs)
+  const sum = getTotal(accounts)
   const hasArchivedMoney = Boolean(toDisplay(sum)) // It can be too small to show
 
   return (
     <>
       <Collapse in={visible} unmountOnExit>
         <List dense>
-          {accs.map(acc => (
+          {accounts.map(acc => (
             <Account key={acc.id} account={acc} />
           ))}
         </List>
@@ -101,7 +168,7 @@ const ArchivedList: FC<{ accs: TAccountPopulated[] }> = props => {
           <span>{t('hideArchived')}</span>
         ) : (
           <span>
-            {t('archivedAccounts', { count: accs.length })}{' '}
+            {t('archivedAccounts', { count: accounts.length })}{' '}
             {hasArchivedMoney && (
               <DisplayAmount
                 month={month}
@@ -117,7 +184,7 @@ const ArchivedList: FC<{ accs: TAccountPopulated[] }> = props => {
   )
 }
 
-function getTotal(accs: TAccountPopulated[]): TFxAmount {
+const getTotal = (accs: TAccountPopulated[]): TFxAmount => {
   return accs.reduce(
     (sum, a) => addFxAmount(sum, { [a.fxCode]: a.balance }),
     {}

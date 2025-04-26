@@ -279,10 +279,14 @@ function BudgetSettingsItem() {
   const { t } = useTranslation('settings')
   const dispatch = useAppDispatch()
   const setSnackbar = useSnackbar()
-  const { preferZmBudgets } = userSettingsModel.useUserSettings()
-  const toggleSetting = () => {
+  const { preferZmBudgets, useAccountCategorization } = userSettingsModel.useUserSettings()
+  const toggleZmBudgets = () => {
     sendEvent(`Settings: preferZmBudgets ${preferZmBudgets ? 'off' : 'on'}`)
     dispatch(userSettingsModel.patch({ preferZmBudgets: !preferZmBudgets }))
+  }
+  const toggleAccountCategorization = () => {
+    sendEvent(`Settings: useAccountCategorization ${useAccountCategorization ? 'off' : 'on'}`)
+    dispatch(userSettingsModel.patch({ useAccountCategorization: !useAccountCategorization }))
   }
   const convertBudgets = () => {
     sendEvent(`Settings: convert old budgets`)
@@ -296,7 +300,7 @@ function BudgetSettingsItem() {
 
   return (
     <>
-      <MenuItem onClick={toggleSetting}>
+      <MenuItem onClick={toggleZmBudgets}>
         <ListItemIcon>
           <AutoAwesomeIcon />
         </ListItemIcon>
@@ -305,7 +309,19 @@ function BudgetSettingsItem() {
           primary={t('useZmBudgets')}
           secondary={t('useZmBudgetsDescription')}
         />
-        <Switch edge="end" checked={!!preferZmBudgets} />
+        <Switch edge="end" checked={preferZmBudgets} />
+      </MenuItem>
+
+      <MenuItem onClick={toggleAccountCategorization}>
+        <ListItemIcon>
+          <AutoAwesomeIcon />
+        </ListItemIcon>
+        <ListItemText
+          sx={{ whiteSpace: 'normal' }}
+          primary={t('useAccountCategorization')}
+          secondary={t('useAccountCategorizationDescription')}
+        />
+        <Switch edge="end" checked={useAccountCategorization} />
       </MenuItem>
 
       {!preferZmBudgets && (

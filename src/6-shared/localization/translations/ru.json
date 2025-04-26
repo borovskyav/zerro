@@ -143,7 +143,14 @@
     "archivedAccounts_other": "+{{count}} архивных счетов",
     "archived": "Архивные",
     "hideArchived": "Скрыть архивные",
-    "showArchived": "Показать архивные"
+    "showArchived": "Показать архивные",
+    "safety": "Резервы",
+    "safetyDescription": "Счета для резервных средств и накоплений на краткосрочные цели",
+    "realAssets": "Имущество",
+    "realAssetsDescription": "Недвижимость, автомобили и другие материальные активы. Стоимость таких активов может меняться со временем, поэтому периодически рекомендуется проводить их переоценку.",
+    "investments": "Инвестиции",
+    "investmentsDescription": "Инвестиционные счета, акции, облигации и другие финансовые инструменты",
+    "balanceDescription": "Счета для повседневных расходов и доходов"
   },
 
   "analytics": {
@@ -430,6 +437,8 @@
     "regularSync": "Автосинхронизация",
     "useZmBudgets": "Бюджеты Дзен-мани",
     "useZmBudgetsDescription": "Использовать те же бюджеты что и ДМ",
+    "useAccountCategorization": "Категории аккаунтов",
+    "useAccountCategorizationDescription": "Использовать накопительные аккаунты",
     "convertBudgetsFromZm": "Конвертировать бюджеты из Дзен-мани",
     "budgetsConverted": "✅ Бюджеты сконвертированы ({{budgets}})",
     "logOut": "Выйти",

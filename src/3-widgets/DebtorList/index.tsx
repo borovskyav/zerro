@@ -1,11 +1,12 @@
-import React from 'react'
+import React, { FC } from 'react'
 import { useTranslation } from 'react-i18next'
-import { List } from '@mui/material'
+import { Collapse, List, ListItemButton } from '@mui/material'
 import { Debtor, Subheader } from './components'
 import { addFxAmount, isZero } from '6-shared/helpers/money'
 import { keys } from '6-shared/helpers/keys'
-import { TFxCode } from '6-shared/types'
+import { TFxAmount, TFxCode } from '6-shared/types'
 import { debtorModel } from '5-entities/debtors'
+import { useToggle } from "../../6-shared/hooks/useToggle";
 
 type TDebtorInfo = {
   name: string
@@ -45,33 +46,55 @@ export function DebtorList({ className = '' }) {
 
   return (
     <div className={className}>
-      {!!iOweList.length && (
-        <List dense>
-          <Subheader name={t('iOwe')} amount={totalOwe} />
-          {iOweList.map(d => (
-            <Debtor
-              key={d.name + d.currency}
-              name={d.name}
-              currency={d.currency}
-              balance={d.balance}
-            />
-          ))}
-        </List>
-      )}
+      <DebtorSection
+        debtors={iOweList}
+        title={t('iOwe')}
+        totalAmount={totalOwe}
+      />
 
-      {!!iLentList.length && (
-        <List dense>
-          <Subheader name={t('iAmOwed')} amount={totalLent} />
-          {iLentList.map(d => (
-            <Debtor
-              key={d.name + d.currency}
-              name={d.name}
-              currency={d.currency}
-              balance={d.balance}
-            />
-          ))}
-        </List>
-      )}
+      <DebtorSection
+        debtors={iLentList}
+        title={t('iAmOwed')}
+        totalAmount={totalLent}
+      />
     </div>
+  )
+}
+
+interface DebtorSectionProps {
+  debtors: TDebtorInfo[]
+  title: string
+  totalAmount: TFxAmount
+}
+
+const DebtorSection: FC<DebtorSectionProps> = ({ debtors, title, totalAmount }) => {
+  const [visible, toggleVisibility] = useToggle(true);
+  if (!debtors.length) return null
+
+  return (
+    <List dense>
+      <ListItemButton
+        component="div"
+        onClick={toggleVisibility}
+        disableGutters
+        sx={{ p: 0, borderRadius: 1 }}
+      >
+        <Subheader
+          name={title}
+          amount={totalAmount}
+          sx={{width: '100%', cursor: 'pointer', '&:hover': { bgcolor: 'action.hover' }}}
+        />
+      </ListItemButton>
+      <Collapse in={visible} unmountOnExit>
+        {debtors.map(d => (
+          <Debtor
+            key={d.name + d.currency}
+            name={d.name}
+            currency={d.currency}
+            balance={d.balance}
+          />
+        ))}
+      </Collapse>
+    </List>
   )
 }
