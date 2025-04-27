@@ -1,10 +1,10 @@
-import type { TAccountId } from '6-shared/types'
+import { AccountType, TAccountId } from '6-shared/types'
 import React, { FC, useCallback } from 'react'
 import { Menu, MenuItem, MenuProps, Box } from '@mui/material'
 import { useAppDispatch } from 'store'
 import { registerPopover } from '6-shared/historyPopovers'
 import { useTranslation } from 'react-i18next'
-import { accountModel, isPinned, TAccountPopulated } from '5-entities/account'
+import { accountModel, TAccountPopulated } from '5-entities/account'
 import { getMenuPosition } from './shared/helpers'
 import { userSettingsModel } from "../../5-entities/userSettings";
 import { AccountCategory } from "../../5-entities/account/shared/settings";
@@ -14,8 +14,6 @@ import {
   HomeOutlined,
   SavingsOutlined
 } from '@mui/icons-material';
-
-type MenuOptionLabel = 'moveFromBalance' | 'moveInBalance'
 
 type AccountMenuProps = { id: TAccountId }
 
@@ -45,7 +43,7 @@ export const AccountContextMenu: FC = () => {
   if (!account)
     return null
 
-  const options = useAccountCategorization && !isPinned(account)
+  const options = useAccountCategorization && account.balance >= 0
     ? getCategorizationOptions(account, dispatch)
     : getNoCategorizationOptions(account, dispatch)
 

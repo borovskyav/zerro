@@ -14,7 +14,7 @@ import { getAccountMeta, patchAccountMeta } from './shared/settings'
 export type { TAccountDraft } from './thunks'
 export type { TAccountPopulated } from './shared/populate'
 export type { TAccountMeta, TAccountMetaPatch } from './shared/settings'
-export { isPinned } from './shared/settings'
+export { isAccountPinned } from './shared/settings'
 
 export const accountModel = {
   getAccounts,

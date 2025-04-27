@@ -9,35 +9,38 @@ import {
 } from '@mui/material'
 import { toISOMonth } from '6-shared/helpers/date'
 import { Amount } from '6-shared/ui/Amount'
-import { TFxAmount } from '6-shared/types'
+import { TFxAmount, TFxCode } from '6-shared/types'
 import { Tooltip } from '6-shared/ui/Tooltip'
 
-import { TAccountPopulated } from '5-entities/account'
-import {
-  DisplayAmount,
-  displayCurrency,
-} from '5-entities/currency/displayCurrency'
+import { isAccountPinned } from '5-entities/account'
+import { DisplayAmount, displayCurrency } from '5-entities/currency/displayCurrency'
 import { useTransactionDrawer } from '3-widgets/global/TransactionListDrawer'
 import { useAccountContextMenu } from '3-widgets/global/AccountContextMenu'
 import { useContextMenu } from '6-shared/hooks/useContextMenu'
 import { getEventPosition } from '3-widgets/global/shared/helpers'
+import { addFxAmount } from '6-shared/helpers/money'
 
-export const Account: FC<
-  { account: TAccountPopulated } & ListItemButtonProps
-> = ({ account, sx, ...rest }) => {
+type AccountRowProps = {
+  id?: string;
+  title: string;
+  fxCode: TFxCode;
+  balance: number;
+  archived?: boolean;
+} & ListItemButtonProps
+
+export const AccountRow: FC<AccountRowProps> = ({ id, title, fxCode, balance, archived, sx, ...rest }) => {
   const transactionDrawer = useTransactionDrawer()
   const openContextMenu = useAccountContextMenu()
   const showTransactions = useCallback(
-    () =>
-      transactionDrawer.open({
-        title: account.title,
-        filterConditions: { account: account.id },
-      }),
-    [account.id, account.title, transactionDrawer]
+    () => transactionDrawer.open({title: title, filterConditions: {account: id}}),
+    [id, title, transactionDrawer]
   )
-  const propsToPass = useContextMenu({
-    onContextMenu: e =>
-      openContextMenu({ id: account.id }, getEventPosition(e)),
+
+  const propsToPass = !id ? {} : useContextMenu({
+    onContextMenu: e => {
+      if (isAccountPinned(title)) return
+      openContextMenu({ id: id }, getEventPosition(e))
+    },
     onClick: showTransactions,
   })
   return (
@@ -53,7 +56,7 @@ export const Account: FC<
     >
       <Box
         sx={{
-          textDecoration: account.archive ? 'line-through' : 'none',
+          textDecoration: archived ? 'line-through' : 'none',
           flexGrow: 1,
           minWidth: 0,
           position: 'relative',
@@ -61,9 +64,9 @@ export const Account: FC<
           whiteSpace: 'nowrap',
           maskImage: 'linear-gradient(to left, transparent, black 40px)',
         }}
-        title={account.title}
+        title={title}
       >
-        {account.title}
+        {title}
       </Box>
 
       <Box
@@ -71,20 +74,20 @@ export const Account: FC<
         sx={{
           ml: 1,
           flexShrink: 0,
-          color: account.balance < 0 ? 'error.main' : 'text.secondary',
+          color: balance < 0 ? 'error.main' : 'text.secondary',
         }}
       >
         <Tooltip
           title={
-            <Amount value={account.balance} currency={account.fxCode} noShade />
+            <Amount value={balance} currency={fxCode} noShade />
           }
           disableInteractive
           placement="right"
         >
           <div>
             <Amount
-              value={account.balance}
-              currency={account.fxCode}
+              value={balance}
+              currency={fxCode}
               decMode="ifOnly"
               noShade
             />
@@ -133,3 +136,30 @@ export const Subheader: FC<
     </ListSubheader>
   )
 }
+
+export interface SortableItem {
+  fxCode: TFxCode
+  balance: number
+}
+
+export const createSortFunction = <T extends SortableItem>(date = new Date()) => {
+  const month = toISOMonth(date)
+  const toDisplay = displayCurrency.useToDisplay(month)
+
+  return (a: T, b: T) =>
+    toDisplay({ [b.fxCode]: b.balance }) -
+    toDisplay({ [a.fxCode]: a.balance })
+}
+
+export const getTotal = (accs: SortableItem[]): TFxAmount => {
+  return accs.reduce(
+    (sum, a) => addFxAmount(sum, { [a.fxCode]: a.balance }),
+    {}
+  )
+}
+
+export const filterPositiveBalance = <T extends SortableItem>(items: T[]): T[] =>
+  items.filter(a => a.balance >= 0)
+
+export const filterNegativeBalance = <T extends SortableItem>(items: T[]): T[] =>
+  items.filter(a => a.balance < 0)

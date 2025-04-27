@@ -23,9 +23,7 @@ import {
 } from '6-shared/ui/Icons'
 import { Logo } from '6-shared/ui/Logo'
 import { useAppTheme } from '6-shared/ui/theme'
-
-import AccountList from '3-widgets/account/AccountList'
-import { DebtorList } from '3-widgets/DebtorList'
+import { AccountList } from '3-widgets/AccountList'
 import { useTranslation } from 'react-i18next'
 
 export default function NavigationDrawer(props: DrawerProps) {
@@ -50,10 +48,6 @@ export default function NavigationDrawer(props: DrawerProps) {
 
         <Box width="100%" px={1}>
           <AccountList />
-        </Box>
-
-        <Box width="100%" px={1}>
-          <DebtorList />
         </Box>
 
         <Box height={64} width="100%" flexShrink={0} />

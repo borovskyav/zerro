@@ -47,6 +47,6 @@ export const patchAccountMeta =
       dispatch(accountMetaStore.setData(newData))
     }
 
-export function isPinned(a: TAccount): boolean {
-    return a.title.endsWith('📍')
+export function isAccountPinned(title: string): boolean {
+    return title.endsWith('📍')
 }

@@ -157,6 +157,8 @@ export const en: typeof ru = {
     archived: 'Archived',
     hideArchived: 'Hide archived',
     showArchived: 'Show archived',
+    loans: 'Loans',
+    loansDescription: 'Loan category accounts. Convenient for mortgages and loans',
   },
 
   analytics: {
