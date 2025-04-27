@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import React, {useCallback, useState, useMemo} from 'react'
 import {
   Box,
   Typography,
@@ -19,16 +19,26 @@ import {
 import { useAppTheme } from '6-shared/ui/theme'
 import { round } from '6-shared/helpers/money'
 import { formatDate, GroupBy } from '6-shared/helpers/date'
-
-import { displayCurrency } from '5-entities/currency/displayCurrency'
-import { DataLine } from '3-widgets/DataLine'
-import { Period } from '../shared/period'
-import { TNetWorthPoint, useNetWorth } from '../shared/netWorth'
+import { TISODate } from '6-shared/types'
 import { useTranslation } from 'react-i18next'
 import { WidgetHeader } from './WidgetHeader'
 
-type Point = TNetWorthPoint & { total: number }
-type TDataKey = keyof Omit<Point, 'date'>
+import { displayCurrency } from '5-entities/currency/displayCurrency'
+import { userSettingsModel } from '5-entities/userSettings'
+import { DataLine } from '3-widgets/DataLine'
+import { Period, PeriodTitle } from '../shared/period'
+import { TNetWorthPoint, TNetWorthPointCategorized, useNetWorthUncategorized, useNetWorthCategorized } from '../shared/netWorth'
+
+type BasePoint = {
+  date: TISODate
+}
+
+type FieldConfig<T> = {
+  key: keyof T
+  name: string
+  color: string
+  visibleByDefault: boolean
+}
 
 type WidgetNetWorthProps = {
   period: Period
@@ -36,84 +46,204 @@ type WidgetNetWorthProps = {
 }
 
 export function WidgetNetWorth(props: WidgetNetWorthProps) {
-  const { period, onTogglePeriod } = props
+  const { useAccountCategorization } = userSettingsModel.useUserSettings()
+
+  return useAccountCategorization
+    ? <WidgetNetWorthCategorized {...props} />
+    : <WidgetNetWorthUncategorized {...props} />;
+}
+
+export function WidgetNetWorthUncategorized(props: WidgetNetWorthProps) {
   const { t } = useTranslation('analytics')
   const theme = useAppTheme()
 
-  const balances = useNetWorth(period, GroupBy.Month)
+  const fields: FieldConfig<TNetWorthPoint>[] = [
+    {
+      key: 'fundsInBudget',
+      name: t('netWorth.fundsInBudget'),
+      color: theme.palette.primary.dark,
+      visibleByDefault: true
+    },
+    {
+      key: 'fundsSaving',
+      name: t('netWorth.fundsOutOfBalance'),
+      color: theme.palette.primary.light,
+      visibleByDefault: true
+    },
+    {
+      key: 'accountDebts',
+      name: t('netWorth.accountDebts'),
+      color: theme.palette.error.dark,
+      visibleByDefault: true
+    },
+    {
+      key: 'debts',
+      name: t('netWorth.debts'),
+      color: theme.palette.error.light,
+      visibleByDefault: true
+    },
+    {
+      key: 'lented',
+      name: t('netWorth.lented'),
+      color: theme.palette.success.light,
+      visibleByDefault: false
+    },
+  ]
 
-  const [visibleParts, setVisibleParts] = useState<Array<TDataKey>>([
-    'debts',
-    'accountDebts',
-    'fundsInBudget',
-    'fundsSaving',
-    'total',
+  return (
+    <WidgetNetWorthGeneric
+      {...props}
+      getData={useNetWorthUncategorized}
+      fields={fields}
+    />
+  )
+}
+
+export function WidgetNetWorthCategorized(props: WidgetNetWorthProps) {
+  const { t } = useTranslation('analytics')
+  const theme = useAppTheme()
+
+  const fields: FieldConfig<TNetWorthPointCategorized>[] = [
+    {
+      key: 'fundsInBudget',
+      name: t('netWorth.fundsInBudget'),
+      color: theme.palette.primary.light,
+      visibleByDefault: true
+    },
+    {
+      key: 'fundsSaving',
+      name: t('netWorth.fundsSaving'),
+      color: '#7ce2fe',
+      visibleByDefault: true
+    },
+    {
+      key: 'realAssets',
+      name: t('netWorth.realAssets'),
+      color: '#ff692d',
+      visibleByDefault: true
+    },
+    {
+      key: 'investments',
+      name: t('netWorth.investments'),
+      color: '#8e4ec6',
+      visibleByDefault: true
+    },
+    {
+      key: 'accountDebts',
+      name: t('netWorth.accountDebts'),
+      color: theme.palette.error.dark,
+      visibleByDefault: true
+    },
+    {
+      key: 'debts',
+      name: t('netWorth.debts'),
+      color: theme.palette.error.light,
+      visibleByDefault: true
+    },
+    {
+      key: 'lented',
+      name: t('netWorth.lented'),
+      color: theme.palette.success.light,
+      visibleByDefault: false
+    },
+  ]
+
+  return (
+    <WidgetNetWorthGeneric
+      {...props}
+      getData={useNetWorthCategorized}
+      fields={fields}
+    />
+  )
+}
+
+type WidgetNetWorthGenericProps<T extends BasePoint> = {
+  period: Period
+  onTogglePeriod: () => void
+  fields: FieldConfig<T>[]
+  getData: (period: Period, aggregation: GroupBy) => T[]
+}
+
+export function WidgetNetWorthGeneric<T extends BasePoint>(props: WidgetNetWorthGenericProps<T>) {
+  const { t } = useTranslation('analytics')
+  const {period, onTogglePeriod, fields, getData} = props
+  const theme = useAppTheme()
+
+  const balances = getData(period, GroupBy.Month)
+
+  const [visibleParts, setVisibleParts] = useState<Array<keyof T>>([
+    ...fields.filter(f => f.visibleByDefault).map(f => f.key),
+    'total' as keyof T
   ])
-  const isVisible = (key: TDataKey) => visibleParts.includes(key)
-  const toggle = (key: TDataKey) =>
-    setVisibleParts(arr =>
-      arr.includes(key) ? visibleParts.filter(k => k !== key) : [...arr, key]
-    )
 
-  const points: Point[] = balances.map(b => {
-    let total = round(
-      (isVisible('lented') ? b.lented : 0) +
-        (isVisible('debts') ? b.debts : 0) +
-        (isVisible('accountDebts') ? b.accountDebts : 0) +
-        (isVisible('fundsInBudget') ? b.fundsInBudget : 0) +
-        (isVisible('fundsSaving') ? b.fundsSaving : 0)
-    )
-    return { ...b, total }
-  })
+  const isVisible = useCallback((key: keyof T) => visibleParts.includes(key), [visibleParts])
+  const toggle = useCallback((key: keyof T) =>
+      setVisibleParts(arr =>
+        arr.includes(key) ? arr.filter(k => k !== key) : [...arr, key]
+      ),
+    [setVisibleParts]
+  );
 
-  const colors = {
-    lented: theme.palette.success.light,
-    debts: theme.palette.error.light,
-    accountDebts: theme.palette.error.dark,
-    fundsInBudget: theme.palette.primary.dark,
-    fundsSaving: theme.palette.primary.light,
-    total: theme.palette.info.main,
-  }
+  const points = useMemo(() => {
+    return balances.map(b => {
+      let total = 0
 
-  const names = {
-    lented: t('netWorth.lented'),
-    debts: t('netWorth.debts'),
-    accountDebts: t('netWorth.accountDebts'),
-    fundsInBudget: t('netWorth.fundsInBudget'),
-    fundsSaving: t('netWorth.fundsSaving'),
-    total: t('netWorth.total'),
-  }
+      fields.forEach(field => {
+        if (isVisible(field.key)) {
+          const value = (b as Record<keyof T, number | undefined>)[field.key] || 0
+          total = round(total + value)
+        }
+      })
 
-  const makeBar = (key: TDataKey) => {
-    if (!isVisible(key)) return null
+      return { ...b, total } as T & { total: number }
+    })
+  }, [balances, fields, isVisible])
+
+  const colors = useMemo(() => {
+    const result: Record<string, string> = { total: theme.palette.info.main }
+    fields.forEach(field => { result[field.key as string] = field.color })
+    return result
+  }, [fields, theme.palette.info.main])
+
+  const names = useMemo(() => {
+    const result: Record<string, string> = { total: t('netWorth.total') }
+    fields.forEach(field => { result[field.key as string] = field.name })
+    return result
+  }, [fields, t])
+
+  const makeBar = useCallback((field: FieldConfig<T>) => {
+    if (!isVisible(field.key)) return null
+
     return (
       <Bar
-        dataKey={key}
-        name={names[key]}
+        key={field.key as string}
+        dataKey={field.key as string}
+        name={field.name}
         stackId="a"
-        fill={colors[key]}
+        fill={field.color}
         isAnimationActive={false}
       />
     )
-  }
+  }, [isVisible])
 
-  const makeCheck = (key: TDataKey) => {
+  const makeCheck = useCallback((field: FieldConfig<T>) => {
     return (
       <FormControlLabel
-        label={names[key]}
+        key={field.key as string}
+        label={field.name}
         control={
           <Checkbox
             sx={{
-              color: colors[key],
-              '&.Mui-checked': { color: colors[key] },
+              color: field.color,
+              '&.Mui-checked': { color: field.color },
             }}
-            checked={isVisible(key)}
-            onChange={() => toggle(key)}
+            checked={isVisible(field.key)}
+            onChange={() => toggle(field.key)}
           />
         }
       />
     )
-  }
+  }, [isVisible, toggle])
 
   return (
     <Paper>
@@ -127,22 +257,18 @@ export function WidgetNetWorth(props: WidgetNetWorthProps) {
             margin={{ top: 0, right: 0, bottom: 0, left: 0 }}
           >
             <YAxis type="number" domain={['dataMin', 'dataMax']} hide />
-            <Tooltip content={<CustomTooltip />} />
+            <Tooltip content={<CustomTooltip<T> names={names} colors={colors} />} />
             {visibleParts.length > 0 && (
               <ReferenceLine y={0} stroke={theme.palette.divider} />
             )}
 
-            {makeBar('debts')}
-            {makeBar('accountDebts')}
-            {makeBar('fundsInBudget')}
-            {makeBar('fundsSaving')}
-            {makeBar('lented')}
+            {fields.map(field => makeBar(field))}
 
-            {isVisible('total') && (
+            {isVisible('total' as keyof T) && (
               <Line
                 type="monotone"
                 dataKey="total"
-                name={names.total}
+                name={t('netWorth.total')}
                 stroke={colors.total}
                 isAnimationActive={false}
                 dot={false}
@@ -153,38 +279,51 @@ export function WidgetNetWorth(props: WidgetNetWorthProps) {
         </ResponsiveContainer>
       </Box>
 
-      <Box p={2}>
-        {makeCheck('fundsInBudget')}
-        {makeCheck('fundsSaving')}
-        {makeCheck('accountDebts')}
-        {makeCheck('debts')}
-        {makeCheck('lented')}
-        {makeCheck('total')}
+      <Box p={2} display="flex" flexWrap="wrap">
+        {fields.map(field => makeCheck(field))}
+
+        <FormControlLabel
+          label={t('netWorth.total')}
+          control={
+            <Checkbox
+              sx={{
+                color: colors.total,
+                '&.Mui-checked': { color: colors.total },
+              }}
+              checked={isVisible('total' as keyof T)}
+              onChange={() => toggle('total' as keyof T)}
+            />
+          }
+        />
       </Box>
     </Paper>
   )
 }
 
-type TPayload = {
-  // chartType: undefined
-  color: string
+type TPayload<T> = {
   dataKey: string
-  fill: string
-  // formatter: undefined
   name: string
-  payload: Point
-  // type: undefined
-  // unit: undefined
+  color: string
+  fill: string
+  payload: T & { total?: number }
   value: number
 }
 
-const CustomTooltip = (props: any) => {
+function CustomTooltip<T extends BasePoint>(props: {
+  active?: boolean
+  payload?: TPayload<T>[]
+  names: Record<string, string>
+  colors: Record<string, string>
+}): React.ReactElement | null {
+  const { active, payload } = props
   const [currency] = displayCurrency.useDisplayCurrency()
-  const payload = props.payload as TPayload[]
-  const active = props.active as boolean
-  if (!active || !payload?.length) return null
+
+  if (!active || !payload?.length)
+    return null
+
   const date = payload[0]?.payload?.date
-  const values = payload.filter(v => v.value)
+  const values = payload.filter(v => v.value !== 0 && v.value !== undefined)
+
   return (
     <Card elevation={10} sx={{ p: 2 }}>
       <Typography variant="h6">
@@ -203,6 +342,7 @@ const CustomTooltip = (props: any) => {
   )
 }
 
-function capitalize(string: string) {
+function capitalize(string: string): string {
+  if (!string) return ''
   return string.charAt(0).toUpperCase() + string.slice(1)
 }

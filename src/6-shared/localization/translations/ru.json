@@ -182,7 +182,10 @@
       "debts": "Долги",
       "accountDebts": "Кредиты",
       "fundsInBudget": "Деньги в балансе",
-      "fundsSaving": "Деньги за балансом",
+      "fundsOutOfBalance": "Деньги за балансом",
+      "fundsSaving": "Резервы",
+      "realAssets": "Имущество",
+      "investments": "Инвестиции",
       "total": "Всего"
     }
   },

@@ -36,7 +36,7 @@ export function useDisplayBalances(
   aggregation: GroupBy,
   start?: TDateDraft,
   end?: TDateDraft
-) {
+) : TBalanceNode<number>[] {
   const fxBalances = useBalances(aggregation, start, end)
   const convert = useAppSelector(displayCurrency.getConverter)
   const balances = useMemo(
