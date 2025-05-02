@@ -48,7 +48,7 @@ export const AccountContextMenu: FC = () => {
     : getNoCategorizationOptions(account, dispatch)
 
   return (
-    <Menu {...displayProps}>
+    <Menu {...displayProps} disableAutoFocusItem>
       {options
         .filter(({ condition }) => condition)
         .map(({ label, action, icon }) =>

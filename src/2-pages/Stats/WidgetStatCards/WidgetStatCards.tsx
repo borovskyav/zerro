@@ -16,7 +16,7 @@ export const WidgetStatCards = React.memo(
     return (
       <Box>
         {<TotalBalanceStats period={period} />}
-        {useAccountCategorization ?? <CategoryStats period={period} />}
+        {useAccountCategorization && <CategoryStats period={period} />}
       </Box>
     )
   })
