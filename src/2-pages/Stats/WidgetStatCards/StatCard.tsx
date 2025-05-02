@@ -3,7 +3,7 @@ import { Box, Paper, Typography } from '@mui/material'
 import { Tooltip } from '6-shared/ui/Tooltip'
 
 type StatCardProps = {
-  title: string
+  title: string | React.ReactNode
   value: string | number
   color?: string
   suffix?: string

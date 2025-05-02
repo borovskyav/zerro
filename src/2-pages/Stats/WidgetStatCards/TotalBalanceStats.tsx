@@ -1,16 +1,17 @@
-import React, {useMemo} from 'react'
-import {useTranslation} from 'react-i18next'
-import {Box, Grid, Typography} from '@mui/material'
-import {Period} from '../shared/period'
-import {GroupBy} from '6-shared/helpers/date'
-import {trModel} from '5-entities/transaction'
-import {useAppSelector} from 'store'
-import {differenceInMonths} from 'date-fns'
-import {useNetWorthUncategorized} from "../shared/netWorth";
-import {useAppTheme} from "../../../6-shared/ui/theme";
-import {useFormatters, useStatSummary} from "./model";
-import {displayCurrency} from "../../../5-entities/currency/displayCurrency";
-import {StatCard} from "./StatCard";
+import React, { useMemo } from 'react'
+import { useTranslation } from 'react-i18next'
+import { Box, Grid, Typography } from '@mui/material'
+import { Period, getStart } from '../shared/period'
+import { GroupBy, formatDate, nextDay } from '6-shared/helpers/date'
+import { trModel } from '5-entities/transaction'
+import { useAppSelector } from 'store'
+import { differenceInMonths } from 'date-fns'
+import { useNetWorthUncategorized } from "../shared/netWorth";
+import { useAppTheme } from "6-shared/ui/theme";
+import { useFormatters, useStatSummary } from "./model";
+import { displayCurrency } from "5-entities/currency/displayCurrency";
+import { StatCard } from "./StatCard";
+import { Tooltip } from "6-shared/ui/Tooltip";
 
 const CONSTANTS = {
   DECIMAL_PRECISION: 1,
@@ -33,11 +34,20 @@ export const TotalBalanceStats: React.FC<{period: Period}> = ({ period }) => {
   const [currency] = displayCurrency.useDisplayCurrency()
   const { formatCurrency, formatPercent } = useFormatters(currency)
 
+  const startDate = getStart(period, GroupBy.Day)
+  const incomeLabelTooltip = startDate
+    ? t('period_from', { date: formatDate(nextDay(startDate)) })
+    : t('period_all')
+
   return (
     <Grid container spacing={2}>
       <Grid item xs={12} sm={6} lg={3}>
         <StatCard
-          title={t('income')}
+          title={
+            <Tooltip title={incomeLabelTooltip} arrow placement="right">
+              <span>{t('income')}</span>
+            </Tooltip>
+          }
           value={formatCurrency(stats.totalIncome)}
           color={theme.palette.success.main}
         />
@@ -82,7 +92,7 @@ export const OutcomeCardTooltip: React.FC<OutcomeTooltipProps> = ({
   period,
   formatCurrency
 }) => {
-  const monthsToLive = useMonthsToLive(totalOutcomeInBudget + totalOutcomeOutOfBudget, period)
+  const {monthsToLive, avgOutcome} = calculateMonthsToLiveAndAgvOutcome(totalOutcomeInBudget + totalOutcomeOutOfBudget, period)
   const { t } = useTranslation('analytics')
   const hasInBalanceOutcome = totalOutcomeInBudget > 0
   const hasOutOfBalanceOutcome = totalOutcomeOutOfBudget > 0
@@ -95,18 +105,12 @@ export const OutcomeCardTooltip: React.FC<OutcomeTooltipProps> = ({
     <Box p={1}>
       {monthsToLive > 0 && (
         <Typography variant="body2">
-          {t('monthsToLive', {count: monthsToLive})}
+          {t('monthsToLive', {count: monthsToLive, avgOutcome: formatCurrency(avgOutcome)})}
         </Typography>
       )}
 
       {showOutcomeSection && (
-        <>
-          {monthsToLive > 0 && <Box mt={1.5} mb={0.5}>
-            <Typography variant="body2" fontWeight="bold">
-              {t('outcome')}:
-            </Typography>
-          </Box>}
-
+        <Box mt={1.5} mb={0.5}>
           {hasInBalanceOutcome && (
             <Typography variant="body2" display="flex"
                         justifyContent="space-between">
@@ -124,17 +128,36 @@ export const OutcomeCardTooltip: React.FC<OutcomeTooltipProps> = ({
                 style={{marginLeft: 8}}>{formatCurrency(totalOutcomeOutOfBudget)}</span>
             </Typography>
           )}
-        </>
+        </Box>
       )}
     </Box>
   )
 }
 
-const useMonthsToLive = (totalOutcome: number, period: Period): number => {
-  const fundsInBudget = useLastBudgetFromNetWorth()
+function calculateMonthsToLiveAndAgvOutcome(
+  totalOutcome: number,
+  period: Period): { monthsToLive: number; avgOutcome: number } {
+  // with period = LastYear it return 13 points max, so we need to get only 12,
+  // but if it returns only 11 or less we need to divide by 11
+  const netWorthPoints = useNetWorthUncategorized(period, GroupBy.Month)
+  const lastMonth = netWorthPoints.length > 0 ? netWorthPoints[netWorthPoints.length - 1] : null
+
+  if (!lastMonth)
+    return { monthsToLive: 0,  avgOutcome: 0 }
+
+  const currentBalance = lastMonth.lented +
+    lastMonth.debts +
+    lastMonth.accountDebts +
+    lastMonth.fundsInBudget +
+    lastMonth.fundsSaving
+
   const monthsInPeriod = useMonthsInPeriod(period)
-  const monthlyOutcome = totalOutcome / monthsInPeriod
-  return Math.round(fundsInBudget / monthlyOutcome)
+  const months = monthsInPeriod >= netWorthPoints.length ? netWorthPoints.length : monthsInPeriod
+  const avgOutcome = totalOutcome / months
+  return {
+    monthsToLive: Math.round(currentBalance / avgOutcome),
+    avgOutcome: avgOutcome
+  }
 }
 
 const useMonthsInPeriod = (period: Period): number => {
@@ -155,14 +178,4 @@ const useMonthsInPeriod = (period: Period): number => {
         return CONSTANTS.DEFAULT_MONTHS
     }
   }, [period, historyStart])
-}
-
-const useLastBudgetFromNetWorth = (): number => {
-  const netWorthPoints = useNetWorthUncategorized(Period.LastYear, GroupBy.Month)
-  const lastMonth = netWorthPoints.length > 0 ? netWorthPoints[netWorthPoints.length - 1] : null
-
-  if (!lastMonth)
-    return 0
-
-  return lastMonth.lented + lastMonth.debts + lastMonth.accountDebts + lastMonth.fundsInBudget + lastMonth.fundsSaving
 }
