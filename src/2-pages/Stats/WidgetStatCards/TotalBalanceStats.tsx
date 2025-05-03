@@ -40,7 +40,7 @@ export const TotalBalanceStats: React.FC<{period: Period}> = ({ period }) => {
     : t('period_all')
 
   return (
-    <Grid container spacing={2}>
+    <>
       <Grid item xs={12} sm={6} lg={3}>
         <StatCard
           title={
@@ -77,12 +77,11 @@ export const TotalBalanceStats: React.FC<{period: Period}> = ({ period }) => {
       <Grid item xs={12} sm={6} lg={3}>
         <StatCard
           title={t('savingsRate')}
-          value={formatPercent(stats.savingsRate)}
-          suffix="%"
+          value={formatPercent(stats.savingsRate)+'%'}
           color={stats.savingsRate >= 0 ? theme.palette.success.main : theme.palette.error.main}
         />
       </Grid>
-    </Grid>
+    </>
   );
 }
 

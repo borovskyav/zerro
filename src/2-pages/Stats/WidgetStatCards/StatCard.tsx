@@ -6,7 +6,6 @@ type StatCardProps = {
   title: string | React.ReactNode
   value: string | number
   color?: string
-  suffix?: string
   tooltip?: React.ReactNode
 }
 
@@ -29,7 +28,7 @@ const styles = {
 }
 
 export const StatCard = React.memo(
-  function StatCard({title, value, color, suffix = '', tooltip}: StatCardProps) {
+  function StatCard({title, value, color, tooltip}: StatCardProps) {
     const content = (
       <Paper sx={{height: '100%'}}>
         <Box sx={styles.cardContent}>
@@ -48,7 +47,7 @@ export const StatCard = React.memo(
               color: color || 'inherit'
             }}
           >
-            <span style={styles.valueWrapper}>{value}{suffix}</span>
+            <span style={styles.valueWrapper}>{value}</span>
           </Typography>
         </Box>
       </Paper>

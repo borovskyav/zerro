@@ -9,25 +9,28 @@ import { getStart, Period } from './period'
 import { isFinite } from 'lodash'
 import {AccountCategory} from "../../../5-entities/account/shared/settings";
 
-export type TNetWorthPoint = {
+export type TPointBase = {
   date: TISODate
-  /** Money I gave to somebody */
-  lented: number
-  /** Money I owe to somebody */
-  debts: number
-  /** All negative amounts on accounts */
-  accountDebts: number
+}
+
+export type TNetWorthData = {
+  lented: number /** Money I gave to somebody */
+  debts: number /** Money I owe to somebody */
+  accountDebts: number /** All negative amounts on accounts */
   fundsInBudget: number
   fundsSaving: number
 }
 
-export type TNetWorthPointCategorized = TNetWorthPoint & {
+export type TNetWorthCategorizedData = TNetWorthData & {
   realAssets: number
   investments: number
 }
 
-export function useNetWorthCategorized(period: Period, aggregation: GroupBy): TNetWorthPointCategorized[] {
-  return processNetWorth<TNetWorthPointCategorized>(
+export type TNetWorthPoint = TPointBase & TNetWorthData
+export type TNetWorthCategorizedPoint = TPointBase & TNetWorthCategorizedData
+
+export function useNetWorthCategorized(period: Period, aggregation: GroupBy): TNetWorthCategorizedPoint[] {
+  return processNetWorth<TNetWorthCategorizedPoint>(
     period,
     aggregation,
     (date, accs, accounts) => {

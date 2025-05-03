@@ -188,7 +188,10 @@
       "fundsSaving": "Резервы",
       "realAssets": "Имущество",
       "investments": "Инвестиции",
-      "total": "Всего"
+      "total": "Всего",
+      "assetDistribution": "Распределение активов",
+      "debtDistribution": "Распределение долгов",
+      "concentrationWarning": "Активы слишком сосредоточены в одной категории"
     }
   },
 

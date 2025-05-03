@@ -195,6 +195,9 @@ export const en: typeof ru = {
       realAssets: 'Real Assets',
       investments: 'Investments',
       total: 'Total',
+      assetDistribution: 'Asset Distribution',
+      debtDistribution: 'Debt Distribution',
+      concentrationWarning: 'Assets are too concentrated in one category',
     },
   },
 

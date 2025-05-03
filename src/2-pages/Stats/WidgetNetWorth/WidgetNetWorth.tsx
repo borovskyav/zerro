@@ -19,7 +19,6 @@ import {
 import { useAppTheme } from '6-shared/ui/theme'
 import { round } from '6-shared/helpers/money'
 import { formatDate, GroupBy } from '6-shared/helpers/date'
-import { TISODate } from '6-shared/types'
 import { useTranslation } from 'react-i18next'
 import { WidgetHeader } from './WidgetHeader'
 
@@ -27,17 +26,13 @@ import { displayCurrency } from '5-entities/currency/displayCurrency'
 import { userSettingsModel } from '5-entities/userSettings'
 import { DataLine } from '3-widgets/DataLine'
 import { Period, PeriodTitle } from '../shared/period'
-import { TNetWorthPoint, TNetWorthPointCategorized, useNetWorthUncategorized, useNetWorthCategorized } from '../shared/netWorth'
+import { TNetWorthPoint, useNetWorthUncategorized, useNetWorthCategorized } from '../shared/netWorth'
+import { assetCategories, AssetCategoryKey } from '../shared/assetCategories'
 
-type BasePoint = {
-  date: TISODate
-}
-
-type FieldConfig<T> = {
-  key: keyof T
+type FieldConfig = {
+  key: AssetCategoryKey
   name: string
   color: string
-  visibleByDefault: boolean
 }
 
 type WidgetNetWorthProps = {
@@ -57,43 +52,41 @@ export function WidgetNetWorthUncategorized(props: WidgetNetWorthProps) {
   const { t } = useTranslation('analytics')
   const theme = useAppTheme()
 
-  const fields: FieldConfig<TNetWorthPoint>[] = [
+  const fields: FieldConfig[] = [
     {
       key: 'fundsInBudget',
       name: t('netWorth.fundsInBudget'),
       color: theme.palette.primary.dark,
-      visibleByDefault: true
     },
     {
       key: 'fundsSaving',
       name: t('netWorth.fundsOutOfBalance'),
       color: theme.palette.primary.light,
-      visibleByDefault: true
     },
     {
       key: 'accountDebts',
       name: t('netWorth.accountDebts'),
       color: theme.palette.error.dark,
-      visibleByDefault: true
     },
     {
       key: 'debts',
       name: t('netWorth.debts'),
       color: theme.palette.error.light,
-      visibleByDefault: true
     },
     {
       key: 'lented',
       name: t('netWorth.lented'),
       color: theme.palette.success.light,
-      visibleByDefault: false
     },
   ]
+
+  const visibleFields: AssetCategoryKey[] = ['fundsInBudget', 'fundsSaving', 'accountDebts', 'debts']
 
   return (
     <WidgetNetWorthGeneric
       {...props}
       getData={useNetWorthUncategorized}
+      visibleFields={visibleFields}
       fields={fields}
     />
   )
@@ -101,86 +94,47 @@ export function WidgetNetWorthUncategorized(props: WidgetNetWorthProps) {
 
 export function WidgetNetWorthCategorized(props: WidgetNetWorthProps) {
   const { t } = useTranslation('analytics')
-  const theme = useAppTheme()
 
-  const fields: FieldConfig<TNetWorthPointCategorized>[] = [
-    {
-      key: 'fundsInBudget',
-      name: t('netWorth.fundsInBudget'),
-      color: theme.palette.primary.light,
-      visibleByDefault: true
-    },
-    {
-      key: 'fundsSaving',
-      name: t('netWorth.fundsSaving'),
-      color: '#7ce2fe',
-      visibleByDefault: true
-    },
-    {
-      key: 'realAssets',
-      name: t('netWorth.realAssets'),
-      color: '#ff692d',
-      visibleByDefault: true
-    },
-    {
-      key: 'investments',
-      name: t('netWorth.investments'),
-      color: '#8e4ec6',
-      visibleByDefault: true
-    },
-    {
-      key: 'accountDebts',
-      name: t('netWorth.accountDebts'),
-      color: theme.palette.error.dark,
-      visibleByDefault: true
-    },
-    {
-      key: 'debts',
-      name: t('netWorth.debts'),
-      color: theme.palette.error.light,
-      visibleByDefault: true
-    },
-    {
-      key: 'lented',
-      name: t('netWorth.lented'),
-      color: theme.palette.success.light,
-      visibleByDefault: false
-    },
-  ]
+  const fieldsKeys: AssetCategoryKey[] = ['fundsInBudget', 'fundsSaving', 'realAssets', 'investments', 'accountDebts', 'debts', 'lented']
+  const visibleFields: AssetCategoryKey[] = ['fundsInBudget', 'fundsSaving', 'realAssets', 'investments', 'accountDebts', 'debts']
+
+  const fields: FieldConfig[] = fieldsKeys
+    .map(key => ({
+      key,
+      name: t(assetCategories[key].labelKey as any),
+      color: assetCategories[key].color,
+    }))
 
   return (
     <WidgetNetWorthGeneric
       {...props}
       getData={useNetWorthCategorized}
+      visibleFields={visibleFields}
       fields={fields}
     />
   )
 }
 
-type WidgetNetWorthGenericProps<T extends BasePoint> = {
+type WidgetNetWorthGenericProps<T extends TNetWorthPoint> = {
   period: Period
   onTogglePeriod: () => void
-  fields: FieldConfig<T>[]
+  fields: FieldConfig[]
+  visibleFields: AssetCategoryKey[]
   getData: (period: Period, aggregation: GroupBy) => T[]
 }
 
-export function WidgetNetWorthGeneric<T extends BasePoint>(props: WidgetNetWorthGenericProps<T>) {
+export function WidgetNetWorthGeneric<T extends TNetWorthPoint>(props: WidgetNetWorthGenericProps<T>) {
   const { t } = useTranslation('analytics')
-  const {period, onTogglePeriod, fields, getData} = props
+  const {period, onTogglePeriod, fields, getData, visibleFields} = props
   const theme = useAppTheme()
 
-  const balances = getData(period, GroupBy.Month)
+  const balances: T[] = getData(period, GroupBy.Month)
 
-  const [visibleParts, setVisibleParts] = useState<Array<keyof T>>([
-    ...fields.filter(f => f.visibleByDefault).map(f => f.key),
-    'total' as keyof T
-  ])
+  const [visibleParts, setVisibleParts] = useState<Array<AssetCategoryKey>>([...visibleFields, 'total'])
+  const isVisible = useCallback((key: AssetCategoryKey) => visibleParts.includes(key), [visibleParts])
 
-  const isVisible = useCallback((key: keyof T) => visibleParts.includes(key), [visibleParts])
-  const toggle = useCallback((key: keyof T) =>
-      setVisibleParts(arr =>
-        arr.includes(key) ? arr.filter(k => k !== key) : [...arr, key]
-      ),
+  const toggle = useCallback((key: AssetCategoryKey) =>
+      setVisibleParts(arr => arr.includes(key) ? arr.filter(k => k !== key) : [...arr, key]),
     [setVisibleParts]
   );
 
@@ -188,11 +142,10 @@ export function WidgetNetWorthGeneric<T extends BasePoint>(props: WidgetNetWorth
     return balances.map(b => {
       let total = 0
 
-      fields.forEach(field => {
-        if (isVisible(field.key)) {
-          const value = (b as Record<keyof T, number | undefined>)[field.key] || 0
-          total = round(total + value)
-        }
+      fields.forEach((field: FieldConfig) => {
+        total = isVisible(field.key)
+          ? round(total + ((b as unknown as Record<AssetCategoryKey, number>)[field.key] || 0))
+          : total
       })
 
       return { ...b, total } as T & { total: number }
@@ -211,7 +164,7 @@ export function WidgetNetWorthGeneric<T extends BasePoint>(props: WidgetNetWorth
     return result
   }, [fields, t])
 
-  const makeBar = useCallback((field: FieldConfig<T>) => {
+  const makeBar = useCallback((field: FieldConfig) => {
     if (!isVisible(field.key)) return null
 
     return (
@@ -226,7 +179,7 @@ export function WidgetNetWorthGeneric<T extends BasePoint>(props: WidgetNetWorth
     )
   }, [isVisible])
 
-  const makeCheck = useCallback((field: FieldConfig<T>) => {
+  const makeCheck = useCallback((field: FieldConfig) => {
     return (
       <FormControlLabel
         key={field.key as string}
@@ -264,7 +217,7 @@ export function WidgetNetWorthGeneric<T extends BasePoint>(props: WidgetNetWorth
 
             {fields.map(field => makeBar(field))}
 
-            {isVisible('total' as keyof T) && (
+            {isVisible('total') && (
               <Line
                 type="monotone"
                 dataKey="total"
@@ -290,8 +243,8 @@ export function WidgetNetWorthGeneric<T extends BasePoint>(props: WidgetNetWorth
                 color: colors.total,
                 '&.Mui-checked': { color: colors.total },
               }}
-              checked={isVisible('total' as keyof T)}
-              onChange={() => toggle('total' as keyof T)}
+              checked={isVisible('total')}
+              onChange={() => toggle('total')}
             />
           }
         />
@@ -309,7 +262,7 @@ type TPayload<T> = {
   value: number
 }
 
-function CustomTooltip<T extends BasePoint>(props: {
+function CustomTooltip<T extends TNetWorthPoint>(props: {
   active?: boolean
   payload?: TPayload<T>[]
   names: Record<string, string>
