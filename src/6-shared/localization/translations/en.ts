@@ -199,7 +199,7 @@ export const en: typeof ru = {
       debtDistribution: 'Debt Distribution',
       concentrationWarning: 'Assets are too concentrated in one category',
     },
-    
+
     safetyMonths: {
       title: 'Safety Months',
       months: 'months',
@@ -207,11 +207,16 @@ export const en: typeof ru = {
       notConfigured: 'Safety not configured',
       stressTest: 'Stress Test (+20% expenses)',
       stressTestApplied: 'Monthly expense increased to {{expense}}',
-      veryLow: 'Reserve almost non-existent — replenish first',
-      low: 'Vulnerable zone, recommended to save up to 3 months',
-      normal: 'Normal safety level',
-      good: 'Comfortable reserve, can transfer excess to investments',
-      excess: 'Safety cushion is excessive — part can be utilized',
+      veryLow: 'No reserve',
+      veryLowTooltip: 'Consider building an emergency fund to feel more secure about your financial future',
+      low: "Small reserve",
+      lowTooltip: "Your emergency fund covers less than three months of expenses. Gradually building it up will lower future financial risk",
+      normal: "Adequate reserve",
+      normalTooltip: "Aiming for 3–6 months of expenses is considered healthy. You can keep the current level or continue topping it up",
+      good: "Solid reserve",
+      goodTooltip: "Your emergency fund exceeds six months of expenses, giving you strong protection. You may redirect some new savings to other goals",
+      excessive: "Excessive reserve",
+      excessiveTooltip: "Your emergency fund covers a year or more of expenses. If no large purchases are planned, consider moving part of it into higher-yield, less liquid investments"
     },
   },
 

@@ -1,63 +1,65 @@
 import React, { useState } from 'react'
-import {Box, Paper, Tooltip, Typography, styled, useTheme} from '@mui/material'
+import { Box, Paper, styled, Typography } from '@mui/material'
 import InfoOutlinedIcon from '@mui/icons-material/InfoOutlined'
 import BoltIcon from '@mui/icons-material/Bolt'
 import { useTranslation } from 'react-i18next'
 import { Period } from '../shared/period'
-import { GroupBy } from '../../../6-shared/helpers/date'
-import { useNetWorthCategorized } from '../shared/netWorth'
-import { formatMoney } from '../../../6-shared/helpers/money'
-import { displayCurrency } from '../../../5-entities/currency/displayCurrency'
-import { StatSummary } from "./model";
-import { SafetyRanges, GaugeContainer, GaugeReferenceArc, GaugeValueArc, ColoredGaugeReferenceArc } from "./CustomGauge";
-import {useAppTheme, useColorScheme} from "../../../6-shared/ui/theme";
+import { TNetWorthCategorizedPoint } from '../shared/netWorth'
+import { formatMoney } from '6-shared/helpers/money'
+import { displayCurrency } from '5-entities/currency/displayCurrency'
+import { useStatSummary } from "./model";
+import {
+  ColoredGaugeReferenceArc,
+  GaugeContainer,
+  GaugeReferenceArc,
+  GaugeValueArc,
+  SafetyRanges
+} from "./CustomGauge";
+import { useAppTheme, useColorScheme } from "6-shared/ui/theme";
+import { Tooltip } from '6-shared/ui/Tooltip';
 
 type SafetyMonthsGaugeProps = {
-  period: Period
-  stats: StatSummary
+  netWorthData: TNetWorthCategorizedPoint[]
 }
 
-const notConfigured =  {color: '#9E9E9E', tooltip: 'safetyMonths.notConfigured'}
+const notConfigured = {color: '#9E9E9E', infoText: 'safetyMonths.notConfigured'}
 
-export const SafetyMonthsGauge: React.FC<SafetyMonthsGaugeProps> = ({ period, stats }) => {
+export const SafetyMonthsGauge: React.FC<SafetyMonthsGaugeProps> = ({netWorthData}) => {
   const { t } = useTranslation('analytics')
   const [currency] = displayCurrency.useDisplayCurrency()
   const [stressTest, setStressTest] = useState(false)
+  const stats = useStatSummary(Period.LastYear)
   const {mode} = useColorScheme()
   const theme = useAppTheme()
 
-  // Получаем текущие данные о подушке безопасности
-  const netWorthData = useNetWorthCategorized(Period.LastYear, GroupBy.Month)
   const latestData = netWorthData[netWorthData.length - 1]
 
   if (!latestData) return null
 
-  const { fundsSaving } = latestData
-
-  // Рассчитываем средний месячный расход за последние 12 месяцев
+  const {fundsSaving} = latestData
   const totalOutcome = stats.totalOutcomeInBalance + stats.totalOutcomeOutOfBalance
 
   if (!totalOutcome) return null
 
+  // Calculate average monthly expense based on the period data
+  // We use (length - 1) because we need the number of months, not the number of data points
   const avgMonthlyExpense = totalOutcome / (netWorthData.length - 1 || 1)
-
-  // Применяем стресс-тест, если включен
   const adjustedMonthlyExpense = stressTest ? avgMonthlyExpense * 1.2 : avgMonthlyExpense
-
   const monthsSafety = fundsSaving / adjustedMonthlyExpense
   const isEmptySafety = fundsSaving === 0
 
-  let safetyRange: {color: string, tooltip: string} = isEmptySafety
+  const safetyRange: { color: string, infoText: string } = isEmptySafety
     ? notConfigured
     : SafetyRanges.find(({min, max}) => monthsSafety >= min && monthsSafety < max)
-      || notConfigured
+    || notConfigured
 
   const displayValue = monthsSafety >= 12 ? 12 : monthsSafety;
-  const gaugeText = `${monthsSafety.toFixed()} ${t('safetyMonths.months')}`;
+  const gaugeText = `${monthsSafety.toFixed(0)} ${t('safetyMonths.months')}`;
 
   return (
-    <Paper>
-      <Box p={2} display="flex" flexDirection="column" alignItems="center" position="relative">
+    <Paper sx={{height: '236px'}}>
+      <Box p={2} display="flex" flexDirection="column" alignItems="center"
+           position="relative">
         <GaugeHeader
           title={t('safetyMonths.title')}
           tooltipText={t('safetyMonths.formula')}
@@ -66,25 +68,27 @@ export const SafetyMonthsGauge: React.FC<SafetyMonthsGaugeProps> = ({ period, st
           stressTestTooltip={t('safetyMonths.stressTest')}
         />
 
-        <Box position="relative" width={200} height={150}>
-          <GaugeContainer value={displayValue} valueMax={12} color={safetyRange.color} text={gaugeText}>
-            <ColoredGaugeReferenceArc innerRadius={85} outerRadius={90} />
-            <GaugeReferenceArc innerRadius={65} outerRadius={84} color={mode === 'dark' ? theme.palette.grey[800] : theme.palette.grey[100]} />
-            <GaugeValueArc innerRadius={65} outerRadius={84} />
+        <Box position="relative" width={200} height={136}>
+          <GaugeContainer value={displayValue} valueMax={12}
+                          color={safetyRange.color} text={gaugeText}>
+            <ColoredGaugeReferenceArc innerRadius={85} outerRadius={90}/>
+            <GaugeReferenceArc innerRadius={65} outerRadius={84}
+                               color={mode === 'dark' ? theme.palette.grey[800] : theme.palette.grey[100]}/>
+            <GaugeValueArc innerRadius={65} outerRadius={84}/>
           </GaugeContainer>
         </Box>
 
         <GaugeStatus
-          text={t(safetyRange.tooltip as any)}
+          text={t(`${safetyRange.infoText}` as any)}
+          tooltip={t(`${safetyRange.infoText}Tooltip` as any)}
           color={safetyRange.color}
         />
 
         {stressTest && (
-          <StressTestInfo
-            text={t('safetyMonths.stressTestApplied', {
-              expense: formatMoney(adjustedMonthlyExpense, currency)
-            })}
-          />
+          <Typography variant="caption" color={theme.palette.warning.light}
+                      mt={0.5}>
+            {t('safetyMonths.stressTestApplied', {expense: formatMoney(adjustedMonthlyExpense, currency)})}
+          </Typography>
         )}
       </Box>
     </Paper>
@@ -98,6 +102,7 @@ type GaugeHeaderProps = {
   onStressTestToggle: () => void
   stressTestTooltip: string
 }
+
 
 const GaugeHeader: React.FC<GaugeHeaderProps> = ({
   title,
@@ -125,7 +130,7 @@ const GaugeHeader: React.FC<GaugeHeaderProps> = ({
         <BoltIcon
           htmlColor={stressTest ? theme.palette.warning.light : theme.palette.text.secondary}
           onClick={onStressTestToggle}
-          sx={{ cursor: 'pointer' }}
+          sx={{cursor: 'pointer'}}
         />
       </Tooltip>
     </Box>
@@ -134,36 +139,43 @@ const GaugeHeader: React.FC<GaugeHeaderProps> = ({
 
 type GaugeStatusProps = {
   text: string
+  tooltip: string
   color: string
 }
 
-const GaugeStatus: React.FC<GaugeStatusProps> = ({ text, color }) => {
+
+const GaugeStatus: React.FC<GaugeStatusProps> = ({text, tooltip, color}) => {
   return (
-    <Typography
-      variant="body2"
-      color={color}
-      fontWeight="medium"
-      mt={1}
-      sx={{
-        width: '100%',
-        display: 'inline-block',
-        textAlign: 'center',
-      }}
+    <Box
+      display="flex"
+      justifyContent="center"
+      alignItems="center"
+      width="100%"
+      sx={{zIndex: 0}}
     >
-      {text}
-    </Typography>
+      <Typography
+        variant="body2"
+        color={color}
+        fontWeight="medium"
+        sx={{
+          display: 'inline-block',
+          textAlign: 'center',
+        }}>
+        {text}
+      </Typography>
+      <Tooltip title={tooltip} arrow>
+        <InfoIcon
+          fontSize="small"
+          htmlColor={color}
+          sx={{ml: 0.5}}
+        />
+      </Tooltip>
+    </Box>
   );
 };
 
-const StressTestInfo: React.FC<{text: string}> = ({ text }) => {
-  return (
-    <Typography variant="caption" color="text.secondary" mt={1}>
-      {text}
-    </Typography>
-  );
-};
 
 const InfoIcon = styled(InfoOutlinedIcon)({
   fontSize: '1rem',
-  cursor: 'pointer',
+  cursor: 'pointer'
 });

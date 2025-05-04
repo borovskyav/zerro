@@ -1,8 +1,8 @@
 import { useMemo } from 'react'
 import { Period } from '../shared/period'
 import { useCashFlow } from '../shared/cashflow'
-import { formatMoney } from "../../../6-shared/helpers/money";
-import { GroupBy } from "../../../6-shared/helpers/date";
+import { formatMoney } from '6-shared/helpers/money'
+import { GroupBy } from '6-shared/helpers/date'
 
 export type StatSummary = {
   totalIncome: number
@@ -14,16 +14,23 @@ export type StatSummary = {
 
 type Formatters = {
   formatCurrency: (amount: number) => string
+  formatCurrencyShort: (amount: number) => string
   formatPercent: (value: number) => string
+  formatPercentShort: (value: number) => string
 }
 
 const PERCENT_THRESHOLD = 0.05
 
 export function useFormatters(currency: string): Formatters {
   return useMemo(() => ({
-    formatCurrency: (amount: number): string => formatMoney(amount, currency),
+    formatCurrency: (amount: number): string =>
+      formatMoney(amount, currency),
+    formatCurrencyShort: (amount: number): string =>
+      formatMoney(amount, currency, 0),
     formatPercent: (value: number): string =>
-      Math.abs(value) < PERCENT_THRESHOLD ? '0.0' : value.toFixed(1)
+      Math.abs(value) < PERCENT_THRESHOLD ? '0' : value.toFixed(1),
+    formatPercentShort: (value: number): string =>
+      Math.abs(value) < PERCENT_THRESHOLD ? '0' : value.toFixed(0)
   }), [currency])
 }
 
@@ -32,8 +39,8 @@ export function useStatSummary(period: Period): StatSummary {
 
   const {totalIncome, totalOutcomeInBalance, totalOutcomeOutOfBalance}
     = points.reduce((acc, point, index) => {
-      // We skip the first point because we need to get the total
-      // for the whole period, but not period + 1 day
+      // Skip the first point because we need to get the total
+      // for the exact period, but not period + 1 day
       if (index === 0) return acc
       return {
         totalIncome: acc.totalIncome + point.income,

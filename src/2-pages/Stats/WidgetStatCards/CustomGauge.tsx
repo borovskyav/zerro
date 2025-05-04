@@ -2,11 +2,11 @@ import React, { createContext, useContext, ReactNode } from 'react'
 import { Box } from '@mui/material'
 
 export const SafetyRanges = [
-  { min: -Infinity, max: 1, color: '#F44336', tooltip: 'safetyMonths.veryLow' },
-  { min: 1, max: 3, color: '#FF9800', tooltip: 'safetyMonths.low' },
-  { min: 3, max: 6, color: '#FFC107', tooltip: 'safetyMonths.normal' },
-  { min: 6, max: 12, color: '#4CAF50', tooltip: 'safetyMonths.good' },
-  { min: 12, max: Infinity, color: '#4CAF50', tooltip: 'safetyMonths.excess' },
+  { min: -Infinity, max: 1, color: '#F44336', infoText: 'safetyMonths.veryLow' },
+  { min: 1, max: 3, color: '#FF9800', infoText: 'safetyMonths.low' },
+  { min: 3, max: 6, color: '#FFC107', infoText: 'safetyMonths.normal' },
+  { min: 6, max: 12, color: '#4CAF50', infoText: 'safetyMonths.good' },
+  { min: 12, max: Infinity, color: '#4CAF50', infoText: 'safetyMonths.excessive' },
 ]
 
 type GaugeContextType = {

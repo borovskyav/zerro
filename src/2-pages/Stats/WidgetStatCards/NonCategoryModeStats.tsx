@@ -8,13 +8,12 @@ import { useAppSelector } from 'store'
 import { differenceInMonths } from 'date-fns'
 import { useNetWorthUncategorized } from "../shared/netWorth";
 import { useAppTheme } from "6-shared/ui/theme";
-import {StatSummary, useFormatters, useStatSummary} from "./model";
+import { useFormatters, useStatSummary } from "./model";
 import { displayCurrency } from "5-entities/currency/displayCurrency";
 import { StatCard } from "./StatCard";
 import { Tooltip } from "6-shared/ui/Tooltip";
 
 const CONSTANTS = {
-  DECIMAL_PRECISION: 1,
   DEFAULT_MONTHS: 12,
   THREE_YEARS_MONTHS: 36,
   DATE_FORMAT: 10
@@ -27,11 +26,12 @@ type OutcomeTooltipProps = {
   formatCurrency: (amount: number) => string
 }
 
-export const TotalBalanceStats: React.FC<{period: Period, stats: StatSummary}> = ({ period, stats }) => {
+export const NonCategoryModeStats: React.FC<{period: Period}> = ({ period }) => {
   const { t } = useTranslation('analytics')
   const theme = useAppTheme()
+  const stats = useStatSummary(period)
   const [currency] = displayCurrency.useDisplayCurrency()
-  const { formatCurrency, formatPercent } = useFormatters(currency)
+  const { formatCurrency, formatCurrencyShort, formatPercent, formatPercentShort } = useFormatters(currency)
 
   const startDate = getStart(period, GroupBy.Day)
   const incomeLabelTooltip = startDate
@@ -39,48 +39,54 @@ export const TotalBalanceStats: React.FC<{period: Period, stats: StatSummary}> =
     : t('period_all')
 
   return (
-    <>
-      <Grid item xs={12} sm={6} lg={3}>
-        <StatCard
-          title={
-            <Tooltip title={incomeLabelTooltip} arrow placement="right">
-              <span>{t('income')}</span>
-            </Tooltip>
-          }
-          value={formatCurrency(stats.totalIncome)}
-          color={theme.palette.success.main}
-        />
+    <Box>
+      <Grid container spacing={2}>
+        <Grid item xs={12} sm={6} lg={3}>
+          <StatCard
+            title={
+              <Tooltip title={incomeLabelTooltip} arrow placement="right">
+                <span>{t('income')}</span>
+              </Tooltip>
+            }
+            value={formatCurrency(stats.totalIncome)}
+            shortValue={formatCurrencyShort(stats.totalIncome)}
+            color={theme.palette.success.main}
+          />
+        </Grid>
+        <Grid item xs={12} sm={6} lg={3}>
+          <StatCard
+            title={t('outcome')}
+            value={formatCurrency(stats.totalOutcomeInBalance + stats.totalOutcomeOutOfBalance)}
+            shortValue={formatCurrencyShort(stats.totalOutcomeInBalance + stats.totalOutcomeOutOfBalance)}
+            color={theme.palette.error.main}
+            tooltip={
+              <OutcomeCardTooltip
+                totalOutcomeInBudget={stats.totalOutcomeInBalance}
+                totalOutcomeOutOfBudget={stats.totalOutcomeOutOfBalance}
+                period={period}
+                formatCurrency={formatCurrency}
+              />
+            }
+          />
+        </Grid>
+        <Grid item xs={12} sm={6} lg={3}>
+          <StatCard
+            title={t(stats.totalSavings < 0 ? 'netOutcome' : 'netIncome')}
+            value={formatCurrency(stats.totalSavings)}
+            shortValue={formatCurrencyShort(stats.totalSavings)}
+            color={stats.totalSavings >= 0 ? theme.palette.success.main : theme.palette.error.main}
+          />
+        </Grid>
+        <Grid item xs={12} sm={6} lg={3}>
+          <StatCard
+            title={t('savingsRate')}
+            value={formatPercent(stats.savingsRate) + ' %'}
+            shortValue={formatPercentShort(stats.savingsRate) + ' %'}
+            color={stats.savingsRate >= 0 ? theme.palette.success.main : theme.palette.error.main}
+          />
+        </Grid>
       </Grid>
-      <Grid item xs={12} sm={6} lg={3}>
-        <StatCard
-          title={t('outcome')}
-          value={formatCurrency(stats.totalOutcomeInBalance + stats.totalOutcomeOutOfBalance)}
-          color={theme.palette.error.main}
-          tooltip={
-            <OutcomeCardTooltip
-              totalOutcomeInBudget={stats.totalOutcomeInBalance}
-              totalOutcomeOutOfBudget={stats.totalOutcomeOutOfBalance}
-              period={period}
-              formatCurrency={formatCurrency}
-            />
-          }
-        />
-      </Grid>
-      <Grid item xs={12} sm={6} lg={3}>
-        <StatCard
-          title={t(stats.totalSavings < 0 ? 'netOutcome' : 'netIncome')}
-          value={formatCurrency(stats.totalSavings)}
-          color={stats.totalSavings >= 0 ? theme.palette.success.main : theme.palette.error.main}
-        />
-      </Grid>
-      <Grid item xs={12} sm={6} lg={3}>
-        <StatCard
-          title={t('savingsRate')}
-          value={formatPercent(stats.savingsRate)+'%'}
-          color={stats.savingsRate >= 0 ? theme.palette.success.main : theme.palette.error.main}
-        />
-      </Grid>
-    </>
+    </Box>
   );
 }
 

@@ -1,14 +1,18 @@
 import React, {ReactElement} from 'react'
-import {Box, Grid, Paper} from '@mui/material'
-import {Period} from '../shared/period'
-import {TotalBalanceStats} from './TotalBalanceStats'
-import {userSettingsModel} from "../../../5-entities/userSettings";
-import {useNetWorthCategorized} from "../shared/netWorth";
-import {GroupBy} from "../../../6-shared/helpers/date";
-import {DistributionScale} from "./DistributionScale";
-import {SafetyMonthsGauge} from "./SafetyMonthsGauge";
-import {useTranslation} from "react-i18next";
-import {useStatSummary} from "./model";
+import { Box, Grid} from '@mui/material'
+import { getStart, Period} from '../shared/period'
+import { NonCategoryModeStats, OutcomeCardTooltip } from './NonCategoryModeStats'
+import { userSettingsModel } from "5-entities/userSettings";
+import { useNetWorthCategorized } from "../shared/netWorth";
+import { formatDate, GroupBy, nextDay} from "6-shared/helpers/date";
+import { ActivesDistributionScale } from "./ActivesDistributionScale";
+import { SafetyMonthsGauge } from "./SafetyMonthsGauge";
+import { useTranslation } from "react-i18next";
+import { useFormatters , useStatSummary} from "./model";
+import { StatCard } from "./StatCard";
+import { useAppTheme } from "6-shared/ui/theme";
+import { displayCurrency } from "5-entities/currency/displayCurrency";
+import { Tooltip } from "6-shared/ui/Tooltip";
 
 type WidgetStatCardsProps = {
   period: Period
@@ -17,47 +21,78 @@ type WidgetStatCardsProps = {
 export const WidgetStatCards = React.memo(
   function WidgetStatCards({period}: WidgetStatCardsProps) : ReactElement {
     const { useAccountCategorization } = userSettingsModel.useUserSettings()
-    const stats = useStatSummary(period)
-
     return (
       <Box>
-        <Grid container spacing={2}>
-          {<TotalBalanceStats period={period} stats={stats}/>}
-          {useAccountCategorization && (
-            <>
-              <Grid item xs={12} sm={12} lg={12}>
-                <CategoryStats period={period}/>
-              </Grid>
-              <Grid item xs={12} sm={12} md={6} lg={6}>
-                <SafetyMonthsGauge period={period} stats={stats}/>
-              </Grid>
-            </>
-          )}
-        </Grid>
+        {useAccountCategorization
+          ? <CategoryModeStats period={period} />
+          : <NonCategoryModeStats period={period} />}
       </Box>
     )
   })
 
-const CategoryStats: React.FC<{period: Period}> = ({ period }) => {
+const CategoryModeStats: React.FC<{period: Period}> = ({ period }) => {
   const { t } = useTranslation('analytics')
-  const netWorthData = useNetWorthCategorized(period, GroupBy.Month);
-  const latestData = netWorthData[netWorthData.length - 1];
+  const netWorthData = useNetWorthCategorized(Period.LastYear, GroupBy.Month);
+  const stats = useStatSummary(period)
+  const [currency] = displayCurrency.useDisplayCurrency()
+  const theme = useAppTheme()
+  const { formatCurrency, formatCurrencyShort, formatPercent, formatPercentShort } = useFormatters(currency)
 
-  if (!latestData)
-    return null;
-
-  const { fundsInBudget, fundsSaving, realAssets, investments } = latestData;
+  const startDate = getStart(period, GroupBy.Day)
+  const incomeLabelTooltip = startDate
+    ? t('period_from', { date: formatDate(nextDay(startDate)) })
+    : t('period_all')
 
   return (
-    <Paper>
-      <DistributionScale
-        title={t('netWorth.assetDistribution')}
-        values={{fundsInBudget, fundsSaving, realAssets, investments}}
-        totalValue={fundsInBudget + fundsSaving + realAssets + investments}
-        visibleCategories={['fundsInBudget', 'fundsSaving', 'realAssets', 'investments']}
-        minWidth="100%"
-        p={2}
-      />
-    </Paper>
+    <Box>
+      <Grid container spacing={2}>
+        <Grid item xs={12} sm={12} lg={8}>
+          <Grid container spacing={2}>
+            <Grid item xs={12} sm={4} lg={4}>
+              <StatCard
+                title={
+                  <Tooltip title={incomeLabelTooltip} arrow placement="right">
+                    <span>{t('income')}</span>
+                  </Tooltip>
+                }
+                value={formatCurrency(stats.totalIncome)}
+                shortValue={formatCurrencyShort(stats.totalIncome)}
+                color={theme.palette.success.main}
+              />
+            </Grid>
+            <Grid item xs={12} sm={4} lg={4}>
+              <StatCard
+                title={t('outcome')}
+                value={formatCurrency(stats.totalOutcomeInBalance + stats.totalOutcomeOutOfBalance)}
+                shortValue={formatCurrencyShort(stats.totalOutcomeInBalance + stats.totalOutcomeOutOfBalance)}
+                color={theme.palette.error.main}
+                tooltip={
+                  <OutcomeCardTooltip
+                    totalOutcomeInBudget={stats.totalOutcomeInBalance}
+                    totalOutcomeOutOfBudget={stats.totalOutcomeOutOfBalance}
+                    period={period}
+                    formatCurrency={formatCurrency}
+                  />
+                }
+              />
+            </Grid>
+            <Grid item xs={12} sm={4} lg={4}>
+              <StatCard
+                title={t('savingsRate')}
+                value={formatPercent(stats.savingsRate) + ' %'}
+                shortValue={formatPercentShort(stats.savingsRate) + ' %'}
+                color={stats.savingsRate >= 0 ? theme.palette.success.main : theme.palette.error.main}
+              />
+            </Grid>
+            <Grid item xs={12}>
+              <ActivesDistributionScale netWorthData={netWorthData}/>
+            </Grid>
+          </Grid>
+        </Grid>
+        <Grid item xs={12} sm={12} lg={4}>
+          <SafetyMonthsGauge netWorthData={netWorthData} />
+        </Grid>
+      </Grid>
+    </Box>
   )
 }
