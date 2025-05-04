@@ -205,6 +205,7 @@ export const en: typeof ru = {
       months: 'months',
       formula: 'Safety Reserves ÷ Average Monthly Expense (12 months)',
       notConfigured: 'Safety not configured',
+      notConfiguredTooltip: 'Safety accounts is not configured. To set the account type, open the account’s context menu (long press or right-click) and move the account into one of the three categories',
       stressTest: 'Stress Test (+20% expenses)',
       stressTestApplied: 'Monthly expense increased to {{expense}}',
       veryLow: 'No reserve',
