@@ -199,6 +199,20 @@ export const en: typeof ru = {
       debtDistribution: 'Debt Distribution',
       concentrationWarning: 'Assets are too concentrated in one category',
     },
+    
+    safetyMonths: {
+      title: 'Safety Months',
+      months: 'months',
+      formula: 'Safety Reserves ÷ Average Monthly Expense (12 months)',
+      notConfigured: 'Safety not configured',
+      stressTest: 'Stress Test (+20% expenses)',
+      stressTestApplied: 'Monthly expense increased to {{expense}}',
+      veryLow: 'Reserve almost non-existent — replenish first',
+      low: 'Vulnerable zone, recommended to save up to 3 months',
+      normal: 'Normal safety level',
+      good: 'Comfortable reserve, can transfer excess to investments',
+      excess: 'Safety cushion is excessive — part can be utilized',
+    },
   },
 
   donation: {

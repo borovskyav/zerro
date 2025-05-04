@@ -8,7 +8,7 @@ import { useAppSelector } from 'store'
 import { differenceInMonths } from 'date-fns'
 import { useNetWorthUncategorized } from "../shared/netWorth";
 import { useAppTheme } from "6-shared/ui/theme";
-import { useFormatters, useStatSummary } from "./model";
+import {StatSummary, useFormatters, useStatSummary} from "./model";
 import { displayCurrency } from "5-entities/currency/displayCurrency";
 import { StatCard } from "./StatCard";
 import { Tooltip } from "6-shared/ui/Tooltip";
@@ -27,10 +27,9 @@ type OutcomeTooltipProps = {
   formatCurrency: (amount: number) => string
 }
 
-export const TotalBalanceStats: React.FC<{period: Period}> = ({ period }) => {
+export const TotalBalanceStats: React.FC<{period: Period, stats: StatSummary}> = ({ period, stats }) => {
   const { t } = useTranslation('analytics')
   const theme = useAppTheme()
-  const stats = useStatSummary(period)
   const [currency] = displayCurrency.useDisplayCurrency()
   const { formatCurrency, formatPercent } = useFormatters(currency)
 
