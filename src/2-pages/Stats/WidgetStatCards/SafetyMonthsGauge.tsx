@@ -4,17 +4,17 @@ import InfoOutlinedIcon from '@mui/icons-material/InfoOutlined'
 import BoltIcon from '@mui/icons-material/Bolt'
 import { useTranslation } from 'react-i18next'
 import { Period } from '../shared/period'
+import { useStatSummary } from "../shared/cashflow";
 import { TNetWorthCategorizedPoint } from '../shared/netWorth'
 import { formatMoney } from '6-shared/helpers/money'
 import { displayCurrency } from '5-entities/currency/displayCurrency'
-import { useStatSummary } from "./model";
 import {
   ColoredGaugeReferenceArc,
   GaugeContainer,
   GaugeReferenceArc,
   GaugeValueArc,
   SafetyRanges
-} from "./CustomGauge";
+} from "./Gauge";
 import { useAppTheme, useColorScheme } from "6-shared/ui/theme";
 import { Tooltip } from '6-shared/ui/Tooltip';
 
@@ -69,12 +69,24 @@ export const SafetyMonthsGauge: React.FC<SafetyMonthsGaugeProps> = ({netWorthDat
         />
 
         <Box position="relative" width={200} height={136}>
-          <GaugeContainer value={displayValue} valueMax={12}
-                          color={safetyRange.color} text={gaugeText}>
-            <ColoredGaugeReferenceArc innerRadius={85} outerRadius={90}/>
-            <GaugeReferenceArc innerRadius={65} outerRadius={84}
-                               color={mode === 'dark' ? theme.palette.grey[800] : theme.palette.grey[100]}/>
-            <GaugeValueArc innerRadius={65} outerRadius={84}/>
+          <GaugeContainer
+            value={displayValue}
+            valueMax={12}
+            color={safetyRange.color} text={gaugeText}
+          >
+            <ColoredGaugeReferenceArc
+              innerRadius={85}
+              outerRadius={90}
+            />
+            <GaugeReferenceArc
+              innerRadius={65}
+              outerRadius={84}
+              color={mode === 'dark' ? theme.palette.grey[800] : theme.palette.grey[100]}
+            />
+            <GaugeValueArc
+              innerRadius={65}
+              outerRadius={84}
+            />
           </GaugeContainer>
         </Box>
 
@@ -85,8 +97,7 @@ export const SafetyMonthsGauge: React.FC<SafetyMonthsGaugeProps> = ({netWorthDat
         />
 
         {stressTest && (
-          <Typography variant="caption" color={theme.palette.warning.light}
-                      mt={0.5}>
+          <Typography variant="caption" color={theme.palette.warning.light} mt={0.5}>
             {t('safetyMonths.stressTestApplied', {expense: formatMoney(adjustedMonthlyExpense, currency)})}
           </Typography>
         )}

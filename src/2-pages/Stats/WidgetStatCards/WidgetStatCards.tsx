@@ -1,36 +1,24 @@
-import React, {ReactElement} from 'react'
+import React from 'react'
 import { Box, Grid} from '@mui/material'
-import { getStart, Period} from '../shared/period'
-import { NonCategoryModeStats, OutcomeCardTooltip } from './NonCategoryModeStats'
+import { getStart, Period } from '../shared/period'
+import { useStatSummary } from "../shared/cashflow";
+import { OutcomeCardTooltip } from './OutcomeTooltip'
 import { userSettingsModel } from "5-entities/userSettings";
 import { useNetWorthCategorized } from "../shared/netWorth";
 import { formatDate, GroupBy, nextDay} from "6-shared/helpers/date";
 import { ActivesDistributionScale } from "./ActivesDistributionScale";
 import { SafetyMonthsGauge } from "./SafetyMonthsGauge";
 import { useTranslation } from "react-i18next";
-import { useFormatters , useStatSummary} from "./model";
+import { useFormatters } from "./model";
 import { StatCard } from "./StatCard";
 import { useAppTheme } from "6-shared/ui/theme";
 import { displayCurrency } from "5-entities/currency/displayCurrency";
 import { Tooltip } from "6-shared/ui/Tooltip";
 
-type WidgetStatCardsProps = {
-  period: Period
-}
+export const WidgetStatCards: React.FC<{period: Period}> = ({ period }) => {
+  const {useAccountCategorization} = userSettingsModel.useUserSettings()
+  if (!useAccountCategorization) return
 
-export const WidgetStatCards = React.memo(
-  function WidgetStatCards({period}: WidgetStatCardsProps) : ReactElement {
-    const { useAccountCategorization } = userSettingsModel.useUserSettings()
-    return (
-      <Box>
-        {useAccountCategorization
-          ? <CategoryModeStats period={period} />
-          : <NonCategoryModeStats period={period} />}
-      </Box>
-    )
-  })
-
-const CategoryModeStats: React.FC<{period: Period}> = ({ period }) => {
   const { t } = useTranslation('analytics')
   const netWorthData = useNetWorthCategorized(Period.LastYear, GroupBy.Month);
   const stats = useStatSummary(period)
@@ -70,7 +58,6 @@ const CategoryModeStats: React.FC<{period: Period}> = ({ period }) => {
                   <OutcomeCardTooltip
                     totalOutcomeInBudget={stats.totalOutcomeInBalance}
                     totalOutcomeOutOfBudget={stats.totalOutcomeOutOfBalance}
-                    period={period}
                     formatCurrency={formatCurrency}
                   />
                 }

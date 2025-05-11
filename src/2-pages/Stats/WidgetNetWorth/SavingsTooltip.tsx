@@ -6,7 +6,7 @@ import { GroupBy } from '6-shared/helpers/date'
 import { trModel } from '5-entities/transaction'
 import { useAppSelector } from 'store'
 import { differenceInMonths } from 'date-fns'
-import { useNetWorth } from "../shared/netWorth"
+import { useNetWorthUncategorized } from "../shared/netWorth"
 import { StatSummary } from '../shared/cashflow'
 import { DisplayAmount } from "5-entities/currency/displayCurrency";
 
@@ -93,7 +93,7 @@ function calculateMonthsToLiveAndAgvOutcome(
   period: Period): { monthsToLive: number; avgOutcome: number } {
   // with period = LastYear it return 13 points max, so we need to get only 12,
   // but if it returns only 11 or less we need to divide by 11
-  const netWorthPoints = useNetWorth(period, GroupBy.Month)
+  const netWorthPoints = useNetWorthUncategorized(period, GroupBy.Month)
   const lastMonth = netWorthPoints.length > 0 ? netWorthPoints[netWorthPoints.length - 1] : null
 
   if (!lastMonth)

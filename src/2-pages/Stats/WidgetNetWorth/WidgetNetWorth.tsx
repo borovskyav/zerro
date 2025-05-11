@@ -83,17 +83,21 @@ export function WidgetNetWorthUncategorized(props: WidgetNetWorthProps) {
   const visibleFields: AssetCategoryKey[] = ['fundsInBudget', 'fundsSaving', 'accountDebts', 'debts']
 
   return (
-    <WidgetNetWorthGeneric
-      {...props}
-      getData={useNetWorthUncategorized}
-      visibleFields={visibleFields}
-      fields={fields}
-    />
+    <Paper>
+      <WidgetHeader period={props.period} onTogglePeriod={props.onTogglePeriod}/>
+      <WidgetNetWorthGeneric
+        {...props}
+        getData={useNetWorthUncategorized}
+        visibleFields={visibleFields}
+        fields={fields}
+      />
+    </Paper>
   )
 }
 
 export function WidgetNetWorthCategorized(props: WidgetNetWorthProps) {
   const { t } = useTranslation('analytics')
+  const theme = useAppTheme()
 
   const fieldsKeys: AssetCategoryKey[] = ['fundsInBudget', 'fundsSaving', 'realAssets', 'investments', 'accountDebts', 'debts', 'lented']
   const visibleFields: AssetCategoryKey[] = ['fundsInBudget', 'fundsSaving', 'realAssets', 'investments', 'accountDebts', 'debts']
@@ -106,12 +110,22 @@ export function WidgetNetWorthCategorized(props: WidgetNetWorthProps) {
     }))
 
   return (
-    <WidgetNetWorthGeneric
-      {...props}
-      getData={useNetWorthCategorized}
-      visibleFields={visibleFields}
-      fields={fields}
-    />
+    <Paper>
+      <Box p={2} minWidth="100%">
+        <Typography variant="h5">
+          {t('netWorth.title')}{' '}
+          <span style={{ color: theme.palette.secondary.main, cursor: 'pointer' }} onClick={props.onTogglePeriod}>
+            <PeriodTitle period={props.period} />
+          </span>
+        </Typography>
+      </Box>
+      <WidgetNetWorthGeneric
+        {...props}
+        getData={useNetWorthCategorized}
+        visibleFields={visibleFields}
+        fields={fields}
+      />
+    </Paper>
   )
 }
 
@@ -199,9 +213,7 @@ export function WidgetNetWorthGeneric<T extends TNetWorthPoint>(props: WidgetNet
   }, [isVisible, toggle])
 
   return (
-    <Paper>
-      <WidgetHeader period={period} onTogglePeriod={onTogglePeriod} />
-
+    <>
       <Box p={2} minWidth="100%" height={300}>
         <ResponsiveContainer>
           <ComposedChart
@@ -249,7 +261,7 @@ export function WidgetNetWorthGeneric<T extends TNetWorthPoint>(props: WidgetNet
           }
         />
       </Box>
-    </Paper>
+    </>
   )
 }
 
