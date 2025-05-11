@@ -3,7 +3,6 @@ import { Box, Grid} from '@mui/material'
 import { getStart, Period } from '../shared/period'
 import { useStatSummary } from "../shared/cashflow";
 import { OutcomeCardTooltip } from './OutcomeTooltip'
-import { userSettingsModel } from "5-entities/userSettings";
 import { useNetWorthCategorized } from "../shared/netWorth";
 import { formatDate, GroupBy, nextDay} from "6-shared/helpers/date";
 import { ActivesDistributionScale } from "./ActivesDistributionScale";
@@ -16,9 +15,6 @@ import { displayCurrency } from "5-entities/currency/displayCurrency";
 import { Tooltip } from "6-shared/ui/Tooltip";
 
 export const WidgetStatCards: React.FC<{period: Period}> = ({ period }) => {
-  const {useAccountCategorization} = userSettingsModel.useUserSettings()
-  if (!useAccountCategorization) return
-
   const { t } = useTranslation('analytics')
   const netWorthData = useNetWorthCategorized(Period.LastYear, GroupBy.Month);
   const stats = useStatSummary(period)
