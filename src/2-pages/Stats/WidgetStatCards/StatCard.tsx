@@ -4,8 +4,7 @@ import { Tooltip } from '6-shared/ui/Tooltip'
 
 type StatCardProps = {
   title: string | React.ReactNode
-  value: string
-  shortValue: string
+  value: string | React.ReactNode
   color?: string
   tooltip?: React.ReactNode
 }
@@ -29,36 +28,8 @@ const styles = {
 }
 
 export const StatCard = React.memo(
-  function StatCard({title, value, shortValue, color, tooltip}: StatCardProps) {
-    const [shouldTruncate, setShouldTruncate] = useState(false)
-    const fullValueRef = useRef<HTMLSpanElement>(null)
+  function StatCard({title, value, color, tooltip}: StatCardProps) {
     const containerRef = useRef<HTMLDivElement>(null)
-
-    const fullValue = String(value)
-    const truncatedValue = shortValue
-
-    useEffect(() => {
-
-      const checkOverflow = () => {
-        if (fullValueRef.current && containerRef.current) {
-          const fullValueWidth = fullValueRef.current.offsetWidth
-          const containerWidth = containerRef.current.offsetWidth
-          // Account for padding (16px on each side)
-          const availableWidth = containerWidth - 32
-          const needsTruncation = fullValueWidth > availableWidth
-
-          setShouldTruncate(needsTruncation)
-        }
-      }
-
-      checkOverflow()
-      const handleResize = () => checkOverflow()
-      window.addEventListener('resize', handleResize)
-
-      return () => {
-        window.removeEventListener('resize', handleResize)
-      }
-    }, [value])
 
     const content = (
       <Paper sx={{height: '100%'}}>
@@ -71,21 +42,7 @@ export const StatCard = React.memo(
             component="div"
             sx={{...styles.value, color: color || 'inherit'}}
           >
-            <span
-              style={{
-                ...styles.valueWrapper,
-                position: 'absolute',
-                visibility: 'hidden',
-                pointerEvents: 'none'
-              }}
-              ref={fullValueRef}
-            >
-              {fullValue}
-            </span>
-
-            <span style={styles.valueWrapper}>
-              {shouldTruncate ? truncatedValue : fullValue}
-            </span>
+            {value}
           </Typography>
         </Box>
       </Paper>

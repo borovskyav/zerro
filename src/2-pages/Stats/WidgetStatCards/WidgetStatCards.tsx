@@ -11,7 +11,7 @@ import { useTranslation } from "react-i18next";
 import { useFormatters } from "./model";
 import { StatCard } from "./StatCard";
 import { useAppTheme } from "6-shared/ui/theme";
-import { displayCurrency } from "5-entities/currency/displayCurrency";
+import { DisplayAmount, displayCurrency } from "5-entities/currency/displayCurrency";
 import { Tooltip } from "6-shared/ui/Tooltip";
 
 export const WidgetStatCards: React.FC<{period: Period}> = ({ period }) => {
@@ -20,7 +20,8 @@ export const WidgetStatCards: React.FC<{period: Period}> = ({ period }) => {
   const stats = useStatSummary(period)
   const [currency] = displayCurrency.useDisplayCurrency()
   const theme = useAppTheme()
-  const { formatCurrency, formatCurrencyShort, formatPercent, formatPercentShort } = useFormatters(currency)
+  const { formatCurrency, formatPercent } = useFormatters(currency)
+  const outcome = stats.totalOutcomeInBalance + stats.totalOutcomeOutOfBalance
 
   const startDate = getStart(period, GroupBy.Day)
   const incomeLabelTooltip = startDate
@@ -39,22 +40,19 @@ export const WidgetStatCards: React.FC<{period: Period}> = ({ period }) => {
                     <span>{t('income')}</span>
                   </Tooltip>
                 }
-                value={formatCurrency(stats.totalIncome)}
-                shortValue={formatCurrencyShort(stats.totalIncome)}
+                value={<DisplayAmount value={stats.totalIncome} noShade decMode="ifOnly" />}
                 color={theme.palette.success.main}
               />
             </Grid>
             <Grid item xs={12} sm={4} lg={4}>
               <StatCard
                 title={t('outcome')}
-                value={formatCurrency(stats.totalOutcomeInBalance + stats.totalOutcomeOutOfBalance)}
-                shortValue={formatCurrencyShort(stats.totalOutcomeInBalance + stats.totalOutcomeOutOfBalance)}
+                value={<DisplayAmount value={outcome} noShade decMode="ifOnly" />}
                 color={theme.palette.error.main}
                 tooltip={
                   <OutcomeCardTooltip
                     totalOutcomeInBudget={stats.totalOutcomeInBalance}
                     totalOutcomeOutOfBudget={stats.totalOutcomeOutOfBalance}
-                    formatCurrency={formatCurrency}
                   />
                 }
               />
@@ -63,7 +61,6 @@ export const WidgetStatCards: React.FC<{period: Period}> = ({ period }) => {
               <StatCard
                 title={t('savingsRate')}
                 value={formatPercent(stats.savingsRate) + ' %'}
-                shortValue={formatPercentShort(stats.savingsRate) + ' %'}
                 color={stats.savingsRate >= 0 ? theme.palette.success.main : theme.palette.error.main}
               />
             </Grid>
